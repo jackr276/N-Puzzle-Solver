@@ -1,29 +1,47 @@
+/**
+ * Jack Robbins
+ * 04/20/2024
+ * CS-288, Homework 07, Only problem(A* solver)
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+//Grid is 4 by 4
 #define N 4
+//Following defined for convenience
 #define NxN (N*N)
 #define TRUE 1
 #define FALSE 0
 
 
-/*   THIS IS NOT A COMPLETE PROGRAM.    */
-
-
+/**
+ * Defines a structure that represents each state in the puzzle
+ */
 struct state {
+	//There are 4x4 = 16 tiles in the game
 	int tiles[N][N];
-	int f, g, h;
-	short zero_row, zero_column;	/* location (row and colum) of blank tile 0 */
-	struct state *next;
-	struct state *parent;			/* used to trace back the solution */
+	//For A*, define the total_cost, how far the tile has traveled, and heuristic cost
+	int total_cost, current_travel, heuristic_cost;
+	//location (row and colum) of blank tile 0
+	short zero_row, zero_column;
+	//The next state in the linked list(fringe or closed), NOT a successor
+	struct state* next;
+	//The predecessor of the current state, used for tracing back a solution	
+	struct state* predecessor;			
 };
+
+
+/* The following global variables are defined for convenience */
 
 int goal_rows[NxN];
 int goal_columns[NxN];
-struct state *start,*goal;
-struct state *fringe = NULL, *closed = NULL;
-struct state *succ_states[4];
+struct state* start;
+struct state* goal;
+struct state* fringe = NULL;
+struct state* *closed = NULL;
+struct state* succ_states[4];
 
 void print_a_state(struct state *pstate) {
 	int i,j;
@@ -49,15 +67,16 @@ void initialize(char **argv){
 				start->zero_column=k;
 			}
 		}
-	start->f=0;
-	start->g=0;
-	start->h=0;
+	start->total_cost=0;
+	start->current_travel=0;
+	start->heuristic_cost=0;
 	start->next=NULL;
-	start->parent=NULL;
+	start->predecessor=NULL;
 	printf("initial state\n");
 	print_a_state(start);
 
-	goal=(struct state *) malloc(sizeof(struct state));
+	//Initialize the goal state(all tiles in order, 0 at the very last one)
+	goal=(struct state*)malloc(sizeof(struct state));
 	goal_rows[0]=3;
 	goal_columns[0]=3;
 
@@ -68,10 +87,11 @@ void initialize(char **argv){
 		goal_columns[index]=k;
 		goal->tiles[j][k]=index;
 	}
-	goal->tiles[N-1][N-1]=0;	      /* empty tile=0 */
-	goal->f=0;
-	goal->g=0;
-	goal->h=0;
+	//Position of empty tile
+	goal->tiles[N-1][N-1]=0;
+	goal->total_cost=0;
+	goal->current_travel=0;
+	goal->heuristic_cost=0;
 	goal->next=NULL;
 	printf("goal state\n");
 	print_a_state(goal);
@@ -117,6 +137,9 @@ void expand(struct state *selected) {
 	...
 }
 
+/**
+ * Utilize memcp to compare two states, return true if they are the same
+ */
 int states_same(struct state *a,struct state *b) {
 	int flg=FALSE;
 	if (memcmp(a->tiles, b->tiles, sizeof(int)*NxN) == 0)
@@ -148,22 +171,11 @@ int main(int argc,char **argv) {
 		fringe=fringe->next;  /* get the first state from fringe to expand */
 		
 
-		/* SOME NOTES FOR DEBUGGING:  
-		 * Fix segmentation faults first. If the program cannot produce correct results,
-		 * select an initial layout close to the goal layout, and debug the program with it.
-		 * gdb is recommended. You may also print data on the screen. But this is not as
-		 * convenient as using gdb.
-		 * 
-		 * If your program does not crash, but the result is not correct, you can
-		 * print the state pointed by curr_state for the list of states examined during the search
-		 * 
-		 */
-
 		if(states_same(curr_state,goal)){ /* a solution is found */
 			do{ /* trace back and add the states on the path to a list */
 				curr_state->next=solution_path;
 				solution_path=curr_state;
-				curr_state=curr_state->parent;
+				curr_state=curr_state->predecessor;
 				pathlen++;
 			} while(curr_state!=NULL);
 			printf("Path (lengh=%d):\n", pathlen); 
