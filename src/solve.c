@@ -105,9 +105,27 @@ void initialize(char **argv){
 
 }
 
-/* merge the remaining states pointed by succ_states[] into fringe. 
- * Insert states based on their f values --- keep f values sorted. */
+
+/**
+ * States will be merged into the fringe linked list in a priority queue fashion by their total_cost values. The lower the value,
+ * the higher the priority. This function merges the state pointed to by i into the fringe.
+ * Note: This function assumes that succ_states[i] is NOT NULL, must be checked by caller
+ */
+void priority_queue_insert(int i){
+
+}
+
+
+/**
+ * This function simply iterates through succ_states, passing the appropriate indices along to priority_queue_insert if the pointers
+ * are not null
+ */
 void merge_to_fringe() { 
+	for(int i = 0; i < 4; i++){
+		if(succ_states[i] != NULL){
+			priority_queue_insert(i);
+		}
+	}	
 }
 
 
@@ -377,7 +395,12 @@ int main(int argc,char **argv) {
 			} while(curr_state!=NULL);
 			printf("Path (lengh=%d):\n", pathlen); 
 			curr_state=solution_path;
-			... /* print out the states on the list */
+			/* print out the states on the list */
+			while(solution_path != NULL){
+				print_a_state(solution_path);
+				solution_path=solution_path->next;
+			}	
+
 			//We've found a solution, so the program should exit
 			return 0;	
 		}
