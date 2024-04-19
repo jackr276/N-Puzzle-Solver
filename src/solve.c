@@ -110,11 +110,56 @@ void initialize(char **argv){
 void merge_to_fringe() { 
 }
 
-/*update the f,g,h function values for a state pointed by a pointer in succ_states */
-void update_fgh(int i) {
-	struct state* pstate = succ_states[i];
 
+/**
+ * Update the prediction function for the state pointed to by succ_states[i]. If this pointer is null, simply skip updating
+ * and return
+ */ 
+void update_prediction_function(int i) {
+	struct state* statePtr = succ_states[i];
+	//If statePtr is null, this state was a repeat and has been freed, so don't calculate anything
+	if(statePtr == NULL){
+		return;
+	}
+
+	//The current_travel of the state has already been updated by stateCopy, so we only need to find the heuristic_cost
+	statePtr->heuristic_cost = 0;
+
+	//For heuristic_cost, we will use the manhattan distance from each tile to where it should be. Conveniently, each tile 1-15 should
+	//be in position 0-14, so we can find manhattan distance be doing the sum of the absolute difference in coordinates from a number's current
+	//state position to its goal state position
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			int selected_num, goal_rowCor, goal_colCor;	
+			//grab the number to be examined
+			selected_num = statePtr->tiles[i][j];
+	
+			//0 is a special case, should be in the very last cell
+			if(selected_num == 0){
+				goal_rowCor = goal_colCor = N-1;
+			//TODO may be a better way of doing this
+			} else {
+				if(selected_num < 5){
+					goal_rowCor = 0;
+					goal_colCor = selected_num - 1;
+				}else if(selected_num < 9){
+					goal_rowCor = 1;
+					goal_colCor = selected_num - 5;
+				}else if(selected_num < 13){
+					goal_rowCor = 2;
+					goal_colCor = selected_num - 9;
+				}else {
+					goal_rowCor = 3;
+					goal_colCor = selected_num - 13;
+				}
+			}
 		
+			//Manhattan distance is the absolute value of the x distance and the y distance
+			statePtr->heuristic_cost += abs(i - goal_rowCor) + abs(j - goal_colCor);
+		}
+	}
+	//Once we have the heuristic_cost, update the total_cost
+	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
 }
 
 
@@ -261,9 +306,6 @@ void generate_successors(struct state* predecessor){
 }
 
 
-
-
-
 /**
  * A simple helper function that will tell if two states are the same. To be used for filtering
  */
@@ -280,13 +322,32 @@ int states_same(struct state* a, struct state* b) {
 }
 
 
-/* Filtering:
- * check the state pointed by succ_states[i] to determine whether this state is repeating.
- * free the state if it is repeating. 
- */ 
-void filter(int i, struct state *pstate_list){ 
-	struct state *pstate = succ_states[i];
-	...
+/**
+ * Check to see if the state at position i in the given linkedList is repeating. If it is, free it and set the pointer to be null
+ */
+void check_repeating(int i, struct state* stateLinkedList){ 
+	//Grab the state to examine
+	struct state* statePtr = succ_states[i];
+	
+	//If the statePtr is NULL, no need to check anything
+	if(statePtr == NULL){
+		return;
+	}
+
+	//Get a cursor to iterate over the linkedList	
+	struct state* cursor = stateLinkedList;
+	//Go through the linkedList, if we ever find an element that's the same, break out and free the pointer
+	while(cursor != NULL){
+		//If the states match, we free the pointer and exit the loop
+		if(states_same(statePtr, cursor)){
+			free(statePtr);
+			statePtr = NULL;
+			break;
+		}
+		//Move to the next state in the linkedList
+		cursor = cursor->next;
+	}
+	//Once we get here, the state at i either survived and isn't NULL, or was freed and set to NULL
 }
 
 
@@ -296,7 +357,9 @@ int main(int argc,char **argv) {
 	int ret, i, pathlen=0, index[N-1];
 
 	solution_path=NULL;
-	initialize(argv);	/* init initial and goal states */
+	//Initialize the goal and start states 
+	initialize(argv);
+	//Put the start state into the fringe to begin the search
 	fringe=start; 
 
 	iter=0; 
@@ -315,15 +378,18 @@ int main(int argc,char **argv) {
 			printf("Path (lengh=%d):\n", pathlen); 
 			curr_state=solution_path;
 			... /* print out the states on the list */
-			break;
+			//We've found a solution, so the program should exit
+			return 0;	
 		}
-		expand(curr_state);       /* generate new states */
+		generate_successors(curr_state);       /* generate new states */
 
 
 		for(i=0;i<4;i++){
-			filter(i,fringe); /* Check succ_states[i] agaist fringe to see if it is repeatng */
-			filter(i,closed); /* Check succ_states[i] agaist closed to see if it is repeatng */
-			update_fgh(i); /* evaluate the state if it is not repeating */
+			//Check each successor state against fringe and closed to see if it is repeating
+			check_repeating(i,fringe); 
+			check_repeating(i,closed);
+			//Update the prediction function on states that don't repeat
+			update_prediction_function(i); 
 		}
 
 
@@ -335,5 +401,8 @@ int main(int argc,char **argv) {
 		 */
 		if(iter++ %1000 == 0) printf("iter %d\n", iter);
 	}
+	
+	//If we end up here, fringe became NULL with no goal configuration found, so there is no solution
+	printf("No solution.");
 	return 0;
-} /* end of main */
+}
