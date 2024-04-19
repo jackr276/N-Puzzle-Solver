@@ -112,7 +112,42 @@ void initialize(char **argv){
  * Note: This function assumes that succ_states[i] is NOT NULL, must be checked by caller
  */
 void priority_queue_insert(int i){
+	//Initialize the cursor to be the start of the fringe
+	struct state* cursor = fringe;
 
+	//Grab the priority for convenience
+	int priority = succ_states[i]->total_cost;
+
+	//Special case: inserting at the head
+	if(priority < cursor->total_cost){
+		//Set the succ_states[i] to point to the old head(fringe)
+		succ_states[i]->next = fringe;
+		//Set fringe to the succ_states[i]
+		fringe = succ_states[i];
+		//Exit once done
+		return;
+	}
+
+	//Iterate over the list as long as total_cost is not priority
+	while(cursor->next != NULL && cursor->total_cost < priority){
+		cursor = cursor->next;	
+	}
+
+	//Once we get here, the cursor should be on the node right before the node to be inserted
+	//Perform the insertion, check for special cases(like the cursor being the tail)
+	if(cursor->next == NULL){
+		//If this is the case, we have the tail, so just append the succ_states[i]
+		cursor->next = succ_states[i];
+	} else {
+		//Otherwise, we have to break the linked list and insert succ_states[i] into the right spot
+		//Save the next state
+		struct state* temp = cursor->next;
+		//Insert succ_states[i] after cursor
+		cursor->next = succ_states[i];
+		//Reattach the rest of the linked list
+		succ_states[i]->next = temp;
+	}
+	
 }
 
 
@@ -121,6 +156,7 @@ void priority_queue_insert(int i){
  * are not null
  */
 void merge_to_fringe() { 
+	//Iterate through succ_states, if the given state is not null, call the priority_queue_insert function on it
 	for(int i = 0; i < 4; i++){
 		if(succ_states[i] != NULL){
 			priority_queue_insert(i);
