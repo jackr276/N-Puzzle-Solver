@@ -61,7 +61,7 @@ void print_a_state(struct state* statePtr) {
 
 
 void initialize(char **argv){
-	int i,j,k,index, tile;
+	int j,k,index, tile;
 
 	start=(struct state*)malloc(sizeof(struct state));
 	index = 1;
@@ -119,7 +119,7 @@ void priority_queue_insert(int i){
 	int priority = succ_states[i]->total_cost;
 
 	//Special case: inserting at the head
-	if(priority < cursor->total_cost){
+	if(cursor == NULL || priority < cursor->total_cost){
 		//Set the succ_states[i] to point to the old head(fringe)
 		succ_states[i]->next = fringe;
 		//Set fringe to the succ_states[i]
@@ -379,12 +379,9 @@ int states_same(struct state* a, struct state* b) {
 /**
  * Check to see if the state at position i in the given linkedList is repeating. If it is, free it and set the pointer to be null
  */
-void check_repeating(int i, struct state* stateLinkedList){ 
-	//Grab the state to examine
-	struct state* statePtr = succ_states[i];
-	
-	//If the statePtr is NULL, no need to check anything
-	if(statePtr == NULL){
+void check_repeating(int i, struct state* stateLinkedList){ 	
+	//If succ_states[i] is NULL, no need to check anything
+	if(succ_states[i] == NULL){
 		return;
 	}
 
@@ -393,9 +390,11 @@ void check_repeating(int i, struct state* stateLinkedList){
 	//Go through the linkedList, if we ever find an element that's the same, break out and free the pointer
 	while(cursor != NULL){
 		//If the states match, we free the pointer and exit the loop
-		if(states_same(statePtr, cursor)){
-			free(statePtr);
-			statePtr = NULL;
+		if(states_same(succ_states[i], cursor)){
+			//Free the duplicate state
+			free(succ_states[i]);
+			//Set the pointer to be null as a warning
+			succ_states[i] = NULL;
 			break;
 		}
 		//Move to the next state in the linkedList
@@ -406,9 +405,16 @@ void check_repeating(int i, struct state* stateLinkedList){
 
 
 int main(int argc,char **argv) {
-	int iter,cnt;
-	struct state *curr_state, *cp, *solution_path;
-	int ret, i, pathlen=0, index[N-1];
+	//Check if the number of arguments is correct. If not, exit the program and print an error
+	if(argc != 17){
+		//Give an error message
+		printf("Incorrect number of program arguments. Please retry with a correct configuration.\n");
+		return 1;
+	}
+
+	int iter;
+	struct state *curr_state, *solution_path;
+	int i, pathlen=0;
 
 	solution_path=NULL;
 	//Initialize the goal and start states 
