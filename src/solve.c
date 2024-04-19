@@ -17,9 +17,9 @@
 
 
 /**
- * Defines a type of state, which is a structure, that represents a configuration 
+ * Defines a type of state, which is a structure, that represents a configuration in the gem puzzle game
  */
-typedef struct {
+struct state{
 	//There are 4x4 = 16 tiles in the game
 	int tiles[N][N];
 	//For A*, define the total_cost, how far the tile has traveled, and heuristic cost
@@ -30,33 +30,40 @@ typedef struct {
 	struct state* next;
 	//The predecessor of the current state, used for tracing back a solution	
 	struct state* predecessor;			
-} state;
+};
 
 
 /* The following global variables are defined for convenience */
 
 int goal_rows[NxN];
 int goal_columns[NxN];
-state* start;
-state* goal;
-state* fringe = NULL;
-state* closed = NULL;
-state* succ_states[4];
+struct state* start;
+struct state* goal;
+struct state* fringe = NULL;
+struct state* closed = NULL;
+struct state* succ_states[4];
 
-void print_a_state(state *pstate) {
-	int i,j;
-	for (i=0;i<N;i++) {
-		for (j=0;j<N;j++) 
-			printf("%2d ", pstate->tiles[i][j]);
+
+/**
+ * Prints out a state by printing out the positions in the 4x4 grid
+ */
+void print_a_state(struct state* statePtr) {
+	//Go through tile by tile and print out
+	for (int i=0; i<N; i++) {
+		for (int j=0; j<N; j++){ 
+			printf("%2d ", statePtr->tiles[i][j]);
+		}
+		//Print a newline to represent the row change
 		printf("\n");
 	}
 	printf("\n");
 }
 
+
 void initialize(char **argv){
 	int i,j,k,index, tile;
 
-	start=(state*)malloc(sizeof(state));
+	start=(struct state*)malloc(sizeof(struct state));
 	index = 1;
 	for (j=0;j<N;j++)
 		for (k=0;k<N;k++) {
@@ -76,7 +83,7 @@ void initialize(char **argv){
 	print_a_state(start);
 
 	//Initialize the goal state(all tiles in order, 0 at the very last one)
-	goal=(state*)malloc(sizeof(state));
+	goal=(struct state*)malloc(sizeof(struct state));
 	goal_rows[0]=3;
 	goal_columns[0]=3;
 
@@ -105,7 +112,7 @@ void merge_to_fringe() {
 
 /*update the f,g,h function values for a state pointed by a pointer in succ_states */
 void update_fgh(int i) {
-	state* pstate = succ_states[i];
+	struct state* pstate = succ_states[i];
 
 		
 }
@@ -115,7 +122,7 @@ void update_fgh(int i) {
  * A simple function that swaps two tiles in the provided state
  * Note: The swap function assumes all row positions are valid, this must be checked by the caller
  */
-void swap(int row1, int column1, int row2, int column2,state* statePtr){
+void swap(int row1, int column1, int row2, int column2, struct state* statePtr){
 	//Store the first tile in a temp variable
 	int tile = statePtr->tiles[row1][column1];
 	//Put the tile from row2, column2 into row1, column1
@@ -128,7 +135,7 @@ void swap(int row1, int column1, int row2, int column2,state* statePtr){
 /**
  * Move the 0 slider down by 1 row
  */
-void move_down(state* statePtr){
+void move_down(struct state* statePtr){
 	//Utilize the swap function, move the zero_row down by 1
 	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr);	
 	//Increment the zero_row to keep the position accurate
@@ -139,7 +146,7 @@ void move_down(state* statePtr){
 /**
  * Move the 0 slider right by 1 column
  */
-void move_right(state* statePtr){
+void move_right(struct state* statePtr){
 	//Utilize the swap function, move the zero_column right by 1
 	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr);	
 	//Increment the zero_column to keep the position accurate
@@ -150,7 +157,7 @@ void move_right(state* statePtr){
 /**
  * Move the 0 slider up by 1 row
  */
-void move_up(state* statePtr){
+void move_up(struct state* statePtr){
 	//Utilize the swap function, move the zero_row up by 1
 	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr);	
 	//Decrement the zero_row to keep the position accurate
@@ -161,7 +168,7 @@ void move_up(state* statePtr){
 /**
  * Move the 0 slider left by 1 column
  */
-void move_left(state* statePtr){
+void move_left(struct state* statePtr){
 	//Utilize the swap function, move the zero_column left by 1
 	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row , statePtr->zero_column-1, statePtr);	
 	//Decrement the zero_column to keep the position accurate
@@ -170,20 +177,46 @@ void move_left(state* statePtr){
 
 
 /**
+ * Performs a "deep copy" from the predecessor to the successor
+ */
+void copyState(struct state* predecessor, struct state* successor){
+	//Copy over the tiles array
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			//Copy tile by tile
+			successor->tiles[i][j] = predecessor->tiles[i][j];
+		}
+	}
+
+	//Initialize the current travel to the predecessor travel + 1
+	successor->current_travel = predecessor->current_travel+1;
+	//Copy the zero row and column position
+	successor->zero_row = predecessor->zero_row;
+	successor->zero_column = predecessor->zero_column;
+	//Initialize the successor's next to be null
+	successor->next = NULL;
+	//Set the successors predecessor
+	successor->predecessor = predecessor;
+}
+
+
+/**
  * This function generates all possible successors to a state and stores them in the successor array
  * Note: 4 successors are not always possible, if a successor isn't possible, NULL will be put in its place 
  */
-void generate_successors(state* predecessor){
+void generate_successors(struct state* predecessor){
 	//Create four pointers, one for each possible move, and initialize to NULL by default
-	state* leftMove = NULL;
-	state* rightMove = NULL;
-	state* upMove = NULL;
-	state* downMove = NULL;
+	struct state* leftMove = NULL;
+	struct state* rightMove = NULL;
+	struct state* upMove = NULL;
+	struct state* downMove = NULL;
 	
 	//Generate successor by moving left one if possible
 	if(predecessor->zero_column > 0){
 		//Create a new state
-		leftMove = (state*)malloc(sizeof(state));
+		leftMove = (struct state*)malloc(sizeof(struct state));
+		//Perform a deep copy on the state
+		copyState(predecessor, leftMove);
 		//Move right by one
 		move_left(leftMove);
 	}
@@ -193,7 +226,9 @@ void generate_successors(state* predecessor){
 	//Generate successor by moving right one if possible
 	if(predecessor->zero_column < N-1){
 		//Create a new state
-		rightMove = (state*)malloc(sizeof(state));
+		rightMove = (struct state*)malloc(sizeof(struct state));
+		//Perform a deep copy on the state
+		copyState(predecessor, rightMove);
 		//Move right by one
 		move_right(rightMove);
 	}
@@ -203,7 +238,9 @@ void generate_successors(state* predecessor){
 	//Generate successor by moving down one if possible
 	if(predecessor->zero_row < N-1){
 		//Create a new state
-		downMove = (state*)malloc(sizeof(state));
+		downMove = (struct state*)malloc(sizeof(struct state));
+		//Perform a deep copy on the state
+		copyState(predecessor, downMove);
 		//Move down by one
 		move_down(downMove);
 	}
@@ -213,7 +250,9 @@ void generate_successors(state* predecessor){
 	//Generate successor by moving down one if possible
 	if(predecessor->zero_row > 0){
 		//Create a new state
-		upMove = (state*)malloc(sizeof(state));
+		upMove = (struct state*)malloc(sizeof(struct state));
+		//Perform a deep copy on the state
+		copyState(predecessor, upMove);
 		//Move up by one
 		move_up(upMove);
 	}
@@ -221,15 +260,25 @@ void generate_successors(state* predecessor){
 	succ_states[3] = upMove;
 }
 
+
+
+
+
 /**
- * Utilize memcp to compare two states, return true if they are the same
+ * A simple helper function that will tell if two states are the same. To be used for filtering
  */
-int states_same(state* a,state* b) {
-	int flg=FALSE;
-	if (memcmp(a->tiles, b->tiles, sizeof(int)*NxN) == 0)
-		flg=TRUE;
-	return flg;
+int states_same(struct state* a, struct state* b) {
+	//By default, they are not the same
+	int same=FALSE;
+
+	//Utilize memcmp function on the tiles for convenience
+	if (memcmp(a->tiles, b->tiles, sizeof(int)*NxN) == 0){
+		same=TRUE;
+	}
+	
+	return same;
 }
+
 
 /* Filtering:
  * check the state pointed by succ_states[i] to determine whether this state is repeating.
@@ -240,9 +289,10 @@ void filter(int i, struct state *pstate_list){
 	...
 }
 
+
 int main(int argc,char **argv) {
 	int iter,cnt;
-	state *curr_state, *cp, *solution_path;
+	struct state *curr_state, *cp, *solution_path;
 	int ret, i, pathlen=0, index[N-1];
 
 	solution_path=NULL;
