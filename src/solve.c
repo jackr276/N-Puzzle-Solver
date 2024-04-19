@@ -60,26 +60,43 @@ void print_a_state(struct state* statePtr) {
 }
 
 
+/**
+ * The initialization function takes in the command line arguments and translates them into the initial
+ * state. 
+ * Note: Assumes a correct number of command line arguments(16 numbers), must be checked by caller
+ */
 void initialize(char **argv){
 	int j,k,index, tile;
 
+	/* Begin by creating the start state */
 	start=(struct state*)malloc(sizeof(struct state));
+	//Start at 1, argv[0] is program name
 	index = 1;
-	for (j=0;j<N;j++)
-		for (k=0;k<N;k++) {
+	//Insert everything into the tiles matrix
+	for (j=0;j<N;j++){
+		for (k=0;k<N;k++){
+			//Grab the specific tile number from the arguments and place it into the start state	
 			tile=atoi(argv[index++]);
 			start->tiles[j][k]=tile;
-			if(tile==0) {
+
+			//If we found the zero tile, update the zero row and column
+			if(tile==0){
 				start->zero_row=j;
 				start->zero_column=k;
 			}
 		}
+	}
+
+	/* Initialize everything else in the start state */
 	start->total_cost=0;
 	start->current_travel=0;
 	start->heuristic_cost=0;
 	start->next=NULL;
+	//Important -- must have no predecessor(root of search tree)
 	start->predecessor=NULL;
-	printf("initial state\n");
+
+	//Print to the console for the user
+	printf("Initial state\n");
 	print_a_state(start);
 
 	//Initialize the goal state(all tiles in order, 0 at the very last one)
@@ -87,7 +104,7 @@ void initialize(char **argv){
 	goal_rows[0]=3;
 	goal_columns[0]=3;
 
-	for(index=1; index<NxN; index++){
+	for(index=1; index < NxN; index++){
 		j=(index-1)/N;
 		k=(index-1)%N;
 		goal_rows[index]=j;
@@ -191,21 +208,12 @@ void update_prediction_function(int i) {
 			//0 is a special case, should be in the very last cell
 			if(selected_num == 0){
 				goal_rowCor = goal_colCor = N-1;
-			//TODO may be a better way of doing this
+			//Otherwise mathematically find the needed position
 			} else {
-				if(selected_num < 5){
-					goal_rowCor = 0;
-					goal_colCor = selected_num - 1;
-				}else if(selected_num < 9){
-					goal_rowCor = 1;
-					goal_colCor = selected_num - 5;
-				}else if(selected_num < 13){
-					goal_rowCor = 2;
-					goal_colCor = selected_num - 9;
-				}else {
-					goal_rowCor = 3;
-					goal_colCor = selected_num - 13;
-				}
+				//Goal row coordinate is the index of the number divided by number of rows
+				goal_rowCor = (selected_num - 1) / N;
+				//Goal column coordinate is the index modulated by column length 
+				goal_colCor = (selected_num - 1) % N;
 			}
 		
 			//Manhattan distance is the absolute value of the x distance and the y distance
@@ -446,8 +454,9 @@ int main(int argc,char **argv) {
 			//We've found a solution, so the program should exit
 			return 0;	
 		}
-		generate_successors(curr_state);       /* generate new states */
 
+		//Generate successors to the current state once we know it isn't a solution
+		generate_successors(curr_state);
 
 		for(i=0;i<4;i++){
 			//Check each successor state against fringe and closed to see if it is repeating
@@ -456,14 +465,15 @@ int main(int argc,char **argv) {
 			//Update the prediction function on states that don't repeat
 			update_prediction_function(i); 
 		}
-
-
-		merge_to_fringe(); /* add new states to fringe */
-
+	
+		//Add all necessary states to fringe now that we have checked for repeats and updated predictions 
+		merge_to_fringe(); 
+		//Move the current state into closed
 		curr_state->next=closed;
-		closed=curr_state;	/* curr_state has been checked/expand, add it to closed */
-		/* print out something so that you know your program is still making progress 
-		 */
+		//Maintain closed properly
+		closed=curr_state;
+
+
 		if(iter++ %1000 == 0) printf("iter %d\n", iter);
 	}
 	
