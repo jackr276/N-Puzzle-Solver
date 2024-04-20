@@ -145,8 +145,8 @@ void priority_queue_insert(int i){
 		return;
 	}
 
-	//Iterate over the list as long as total_cost is not priority
-	while(cursor->next != NULL && cursor->total_cost < priority){
+	//Iterate over the list as long as the next cursor's total cost is not more than priority
+	while(cursor->next != NULL && cursor->next->total_cost < priority){
 		cursor = cursor->next;	
 	}
 
@@ -468,6 +468,7 @@ int main(int argc,char **argv) {
 	
 		//Add all necessary states to fringe now that we have checked for repeats and updated predictions 
 		merge_to_fringe(); 
+		
 		//Move the current state into closed
 		curr_state->next=closed;
 		//Maintain closed properly
