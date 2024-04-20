@@ -37,8 +37,8 @@ struct state{
 
 int goal_rows[NxN];
 int goal_columns[NxN];
-struct state* start;
-struct state* goal;
+struct state* start_state;
+struct state* goal_state;
 struct state* fringe = NULL;
 struct state* closed = NULL;
 struct state* succ_states[4];
@@ -69,7 +69,7 @@ void initialize(char **argv){
 	int j,k,index, tile;
 
 	/* Begin by creating the start state */
-	start=(struct state*)malloc(sizeof(struct state));
+	start_state=(struct state*)malloc(sizeof(struct state));
 	//Start at 1, argv[0] is program name
 	index = 1;
 	//Insert everything into the tiles matrix
@@ -77,30 +77,30 @@ void initialize(char **argv){
 		for (k=0;k<N;k++){
 			//Grab the specific tile number from the arguments and place it into the start state	
 			tile=atoi(argv[index++]);
-			start->tiles[j][k]=tile;
+			start_state->tiles[j][k]=tile;
 
 			//If we found the zero tile, update the zero row and column
 			if(tile==0){
-				start->zero_row=j;
-				start->zero_column=k;
+				start_state->zero_row=j;
+				start_state->zero_column=k;
 			}
 		}
 	}
 
 	/* Initialize everything else in the start state */
-	start->total_cost=0;
-	start->current_travel=0;
-	start->heuristic_cost=0;
-	start->next=NULL;
+	start_state->total_cost=0;
+	start_state->current_travel=0;
+	start_state->heuristic_cost=0;
+	start_state->next=NULL;
 	//Important -- must have no predecessor(root of search tree)
-	start->predecessor=NULL;
+	start_state->predecessor=NULL;
 
 	//Print to the console for the user
 	printf("Initial state\n");
-	print_a_state(start);
+	print_a_state(start_state);
 
 	//Initialize the goal state(all tiles in order, 0 at the very last one)
-	goal=(struct state*)malloc(sizeof(struct state));
+	goal_state=(struct state*)malloc(sizeof(struct state));
 	goal_rows[0]=3;
 	goal_columns[0]=3;
 
@@ -109,16 +109,16 @@ void initialize(char **argv){
 		k=(index-1)%N;
 		goal_rows[index]=j;
 		goal_columns[index]=k;
-		goal->tiles[j][k]=index;
+		goal_state->tiles[j][k]=index;
 	}
 	//Position of empty tile
-	goal->tiles[N-1][N-1]=0;
-	goal->total_cost=0;
-	goal->current_travel=0;
-	goal->heuristic_cost=0;
-	goal->next=NULL;
-	printf("goal state\n");
-	print_a_state(goal);
+	goal_state->tiles[N-1][N-1]=0;
+	goal_state->total_cost=0;
+	goal_state->current_travel=0;
+	goal_state->heuristic_cost=0;
+	goal_state->next=NULL;
+	printf("Goal state\n");
+	print_a_state(goal_state);
 
 }
 
@@ -420,32 +420,42 @@ int main(int argc,char **argv) {
 		return 1;
 	}
 
-	int iter;
-	struct state *curr_state, *solution_path;
-	int i, pathlen=0;
-
-	solution_path=NULL;
+	//We will keep track of the number of iterations as a sanity check for large problems
+	int iter = 0;
 	//Initialize the goal and start states 
 	initialize(argv);
 	//Put the start state into the fringe to begin the search
-	fringe=start; 
+	fringe = start_state; 
 
-	iter=0; 
+	//Keep track of the current state that we are on
+	struct state *curr_state;
+
 	while (fringe!=NULL) {	
 		curr_state=fringe;
-		fringe=fringe->next;  /* get the first state from fringe to expand */
+		fringe=fringe->next;
 		
 
-		if(states_same(curr_state,goal)){ /* a solution is found */
-			do{ /* trace back and add the states on the path to a list */
-				curr_state->next=solution_path;
-				solution_path=curr_state;
-				curr_state=curr_state->predecessor;
+		//Check to see if we have found the solution. If we did, we will print out the solution path and stop
+		if(states_same(curr_state, goal_state)){
+			//Keep track of how long the path length is	
+			int pathlen=0;
+			//Keep a linked list for our solution path
+			struct state* solution_path = NULL;
+		
+			//Put the states into the solution path in reverse order(insert at the head) using their predecessor
+			while(curr_state != NULL){
+				//Insert the current state at the head of solution path
+				curr_state->next = solution_path;
+				solution_path = curr_state;
+				//Go back up the solution chain using predecessor
+				curr_state = curr_state->predecessor;
+				//Increment the path length
 				pathlen++;
-			} while(curr_state!=NULL);
-			printf("Path (lengh=%d):\n", pathlen); 
-			curr_state=solution_path;
-			/* print out the states on the list */
+			}
+			//Display the path length for the user
+			printf("Path Length: %d\n", pathlen); 
+
+			//Print out the solution path in order
 			while(solution_path != NULL){
 				print_a_state(solution_path);
 				solution_path=solution_path->next;
@@ -458,7 +468,8 @@ int main(int argc,char **argv) {
 		//Generate successors to the current state once we know it isn't a solution
 		generate_successors(curr_state);
 
-		for(i=0;i<4;i++){
+		//Go through each of the successor states, and check for repetition/update prediction function
+		for(int i = 0; i < 4; i++){
 			//Check each successor state against fringe and closed to see if it is repeating
 			check_repeating(i,fringe); 
 			check_repeating(i,closed);
