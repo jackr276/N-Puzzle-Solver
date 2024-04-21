@@ -67,10 +67,10 @@ void print_a_state(struct state* statePtr) {
 
 /**
  * The initialization function takes in the command line arguments and translates them into the initial
- * state. 
+ * state. It also initializes the goal state mathematically, as it is always the same
  * Note: Assumes a correct number of command line arguments(16 numbers), must be checked by caller
  */
-void initialize(char **argv){
+void initialize_start_goal(char** argv){
 	/* Begin by creating the start state */
 	start_state=(struct state*)malloc(sizeof(struct state));
 
@@ -422,7 +422,7 @@ void check_repeating(int i, struct state* stateLinkedList){
 }
 
 
-int main(int argc,char **argv) {
+int main(int argc, char** argv) {
 	//Check if the number of arguments is correct. If not, exit the program and print an error
 	if(argc != 17){
 		//Give an error message
@@ -433,8 +433,8 @@ int main(int argc,char **argv) {
 	//We will keep track of the number of iterations as a sanity check for large problems
 	int iter = 0;
 	//Initialize the goal and start states 
-	initialize(argv);
-	//Put the start state into the fringe to begin the search
+	initialize_start_goal(argv);
+	//Put the start sGate into the fringe to begin the search
 	fringe = start_state; 
 
 	//Keep track of the current state that we are on
