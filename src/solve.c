@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 //Grid is 4 by 4
 #define N 4
 //Following defined for convenience
@@ -35,13 +36,17 @@ struct state{
 
 /* The following global variables are defined for convenience */
 
-int goal_rows[NxN];
-int goal_columns[NxN];
 struct state* start_state;
 struct state* goal_state;
+
+//The fringe is the set of all states open for exploration. It is maintained as a linked list
 struct state* fringe = NULL;
+//Closed is a linked list containing all sets previously examined. This is used to avoid repeating
 struct state* closed = NULL;
+//Every time a state is expanded, at most 4 successor states will be created
 struct state* succ_states[4];
+
+/* ========================================================== */
 
 
 /**
@@ -66,28 +71,29 @@ void print_a_state(struct state* statePtr) {
  * Note: Assumes a correct number of command line arguments(16 numbers), must be checked by caller
  */
 void initialize(char **argv){
-	int j,k,index, tile;
-
 	/* Begin by creating the start state */
 	start_state=(struct state*)malloc(sizeof(struct state));
+
 	//Start at 1, argv[0] is program name
-	index = 1;
+	int index = 1;
+	int tile;
+
 	//Insert everything into the tiles matrix
-	for (j=0;j<N;j++){
-		for (k=0;k<N;k++){
+	for (int i = 0; i < N; i++){
+		for (int j = 0; j < N; j++){
 			//Grab the specific tile number from the arguments and place it into the start state	
 			tile=atoi(argv[index++]);
-			start_state->tiles[j][k]=tile;
+			start_state->tiles[i][j]=tile;
 
 			//If we found the zero tile, update the zero row and column
 			if(tile==0){
-				start_state->zero_row=j;
-				start_state->zero_column=k;
+				start_state->zero_row = i;
+				start_state->zero_column = j;
 			}
 		}
 	}
 
-	/* Initialize everything else in the start state */
+	//Initialize everything else in the start state
 	start_state->total_cost=0;
 	start_state->current_travel=0;
 	start_state->heuristic_cost=0;
@@ -99,27 +105,31 @@ void initialize(char **argv){
 	printf("Initial state\n");
 	print_a_state(start_state);
 
-	//Initialize the goal state(all tiles in order, 0 at the very last one)
-	goal_state=(struct state*)malloc(sizeof(struct state));
-	goal_rows[0]=3;
-	goal_columns[0]=3;
 
-	for(index=1; index < NxN; index++){
-		j=(index-1)/N;
-		k=(index-1)%N;
-		goal_rows[index]=j;
-		goal_columns[index]=k;
-		goal_state->tiles[j][k]=index;
+	/* Now we create the goal state */	
+	goal_state=(struct state*)malloc(sizeof(struct state));
+	
+	int row, col;
+	//To create the goal state, place the numbers 1-15 in the appropriate locations
+	for(int num = 1; num < NxN; num++){
+		//We can mathematically find row and column positions for inorder numbers
+		row = (num - 1) / N;
+		col = (num - 1) % N;
+		goal_state->tiles[row][col] = num;
 	}
-	//Position of empty tile
+
+	//0 is always at the last spot in the goal state
 	goal_state->tiles[N-1][N-1]=0;
+
+	//Initialize everything else in the goal state
 	goal_state->total_cost=0;
 	goal_state->current_travel=0;
 	goal_state->heuristic_cost=0;
 	goal_state->next=NULL;
+
+	//Print to the console for the user
 	printf("Goal state\n");
 	print_a_state(goal_state);
-
 }
 
 
@@ -452,6 +462,8 @@ int main(int argc,char **argv) {
 				//Increment the path length
 				pathlen++;
 			}
+			
+			printf("\nSolution found! Now displaying solution path\n");
 			//Display the path length for the user
 			printf("Path Length: %d\n", pathlen); 
 
@@ -485,8 +497,13 @@ int main(int argc,char **argv) {
 		//Maintain closed properly
 		closed=curr_state;
 
-
-		if(iter++ %1000 == 0) printf("iter %d\n", iter);
+		//For very complex problems, print the iteration count to the console for a sanity check
+		if(iter > 1 && iter % 1000 == 0) {
+			printf("Still calculating, on %dth iteration\n", iter);
+		}
+		
+		//End of one full iteration
+		iter++;
 	}
 	
 	//If we end up here, fringe became NULL with no goal configuration found, so there is no solution
