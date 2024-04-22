@@ -1,20 +1,17 @@
 /**
- * Jack Robbins
- * 04/20/2024
- * CS-288, Homework 07, Only problem(A* solver)
+ * Author: Jack Robbins
+ * This program implements an A* search algorithm to find the shortest solve path for the 15-puzzle problem
+ * game. It takes in a 15-puzzle problem starting configuration in row-major order as a command line argument,
+ * and prints out the full solution path to the problem, step by step, if such a solution exists.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-
-//Grid is 4 by 4
+//Grid is 4 by 4, 16 tiles total
 #define N 4
-//Following defined for convenience
 #define NxN (N*N)
-#define TRUE 1
-#define FALSE 0
 
 
 /**
@@ -37,7 +34,6 @@ struct state{
 /* The following global variables are defined for convenience */
 struct state* start_state;
 struct state* goal_state;
-
 //The fringe is the set of all states open for exploration. It is maintained as a linked list
 struct state* fringe = NULL;
 //Closed is a linked list containing all sets previously examined. This is used to avoid repeating
@@ -380,20 +376,19 @@ void generate_successors(struct state* predecessor){
  * A simple helper function that will tell if two states are the same. To be used for filtering
  */
 int states_same(struct state* a, struct state* b) {
-	//By default, they are not the same
-	int same=FALSE;
-
 	//Utilize memcmp function on the tiles for convenience
 	if (memcmp(a->tiles, b->tiles, sizeof(int)*NxN) == 0){
-		same=TRUE;
+		//Return 1 if they are the same, 1 corresponds to true
+		return 1;	
 	}
-	
-	return same;
+	//Return 0 if different	
+	return 0;
 }
 
 
 /**
- * Check to see if the state at position i in the given linkedList is repeating. If it is, free it and set the pointer to be null
+ * Check to see if the state at position i in the given linkedList is repeating. If it is, free it and
+ * set the pointer to be null
  */
 void check_repeating(int i, struct state* stateLinkedList){ 	
 	//If succ_states[i] is NULL, no need to check anything
@@ -415,41 +410,34 @@ void check_repeating(int i, struct state* stateLinkedList){
 		}
 		//Move to the next state in the linkedList
 		cursor = cursor->next;
+		//Once we get here, the state at i either survived and isn't null, or was freed and set to NULL
 	}
-	//Once we get here, the state at i either survived and isn't NULL, or was freed and set to NULL
 }
 
 
 /**
- * The main function implements the entire A* solving algorithm in it
+ * Use an A* search algorithm to solve the 15-puzzle problem. If the solve function is successful, it will
+ * print the resulting solution path to the console as well.  
  */
-int main(int argc, char** argv) {
-	//Check if the number of arguments is correct. If not, exit the program and print an error
-	if(argc != 17){
-		//Give an error message
-		printf("Incorrect number of program arguments. Please retry with a correct configuration.\n");
-		return 1;
-	}
-
+int solve(){
 	//We will keep track of the number of iterations as a sanity check for large problems
 	int iter = 0;
-	//Initialize the goal and start states 
-	initialize_start_goal(argv);
-	//Put the start sGate into the fringe to begin the search
+	//Put the start state into the fringe to begin the search
 	fringe = start_state; 
-
-	//Keep track of the current state that we are on
-	struct state *curr_state;
+	//Maintain a pointer for the current state in the search
+	struct state* curr_state;
 
 	//Algorithm main loop -- while there are still states to be expanded, keep iterating until we find a solution
-	while (fringe!=NULL) {	
+	while (fringe!=NULL) {
+		//Remove or "pop" the head of the fringe linked list -- because fringe is a priority queue, this is the most
+		//promising state to explore next
 		curr_state=fringe;
 		fringe=fringe->next;
 
 		//Check to see if we have found the solution. If we did, we will print out the solution path and stop
 		if(states_same(curr_state, goal_state)){
-			//Keep track of how long the path length is	
-			int pathlen=0;
+			//Keep track of how long the path is	
+			int pathlen = 0;
 			//Keep a linked list for our solution path
 			struct state* solution_path = NULL;
 		
@@ -471,10 +459,10 @@ int main(int argc, char** argv) {
 			//Print out the solution path in order
 			while(solution_path != NULL){
 				print_a_state(solution_path);
-				solution_path=solution_path->next;
+				solution_path = solution_path->next;
 			}	
 
-			//We've found a solution, so the program should exit
+			//We've found a solution, so the function should exit 
 			return 0;	
 		}
 
@@ -510,4 +498,23 @@ int main(int argc, char** argv) {
 	//If we end up here, fringe became NULL with no goal configuration found, so there is no solution
 	printf("No solution.");
 	return 0;
+}
+
+
+/**
+ * The main function simply makes the needed calls to the initialize and solve function after checking command
+ * line arguments
+ */
+int main(int argc, char** argv) {
+	//Check if the number of arguments is correct. If not, exit the program and print an error
+	if(argc != 17){
+		//Give an error message
+		printf("Incorrect number of program arguments. Please retry with a correct configuration.\n");
+		return 1;
+	}
+
+	//Initialize the goal and start states 
+	initialize_start_goal(argv);
+	//Call the solve() funciton and hand off the rest of the program execution to it
+	return solve();
 }
