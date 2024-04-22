@@ -435,7 +435,7 @@ int solve(){
 	struct state* curr_state;
 
 	//Algorithm main loop -- while there are still states to be expanded, keep iterating until we find a solution
-	while (fringe!=NULL) {
+	while (fringe != NULL) {
 		//Remove or "pop" the head of the fringe linked list -- because fringe is a priority queue, this is the most
 		//promising state to explore next
 		curr_state=fringe;
