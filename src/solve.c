@@ -200,12 +200,19 @@ void update_prediction_function(int i) {
 	//The current_travel of the state has already been updated by stateCopy, so we only need to find the heuristic_cost
 	statePtr->heuristic_cost = 0;
 
-	//For heuristic_cost, we will use the manhattan distance from each tile to where it should be. Conveniently, each tile 1-15 should
-	//be in position 0-14, so we can find manhattan distance be doing the sum of the absolute difference in coordinates from a number's current
-	//state position to its goal state position
+	/**
+	* For heuristic_cost, we will use the manhattan distance from each tile to where it should be.
+	* Conveniently, each tile 1-15 should be in position 0-14, so we can find manhattan distance by
+	* doing the sum of the absolute difference in coordinates from a number's current state position
+	* to its goal state position
+	*/
+
+	//Declare all needed variables
+	int selected_num, goal_rowCor, goal_colCor;	
+	
+	//Go through each tile in the state and calculate the heuristic_cost
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N; j++){
-			int selected_num, goal_rowCor, goal_colCor;	
 			//grab the number to be examined
 			selected_num = statePtr->tiles[i][j];
 	
@@ -416,8 +423,8 @@ void check_repeating(int i, struct state* stateLinkedList){
 
 
 /**
- * Use an A* search algorithm to solve the 15-puzzle problem. If the solve function is successful, it will
- * print the resulting solution path to the console as well.  
+ * Use an A* search algorithm to solve the 15-puzzle problem by implementing the A* main loop. If the solve function 
+ * is successful, it will print the resulting solution path to the console as well.  
  */
 int solve(){
 	//We will keep track of the number of iterations as a sanity check for large problems
@@ -481,7 +488,7 @@ int solve(){
 		//Add all necessary states to fringe now that we have checked for repeats and updated predictions 
 		merge_to_fringe(); 
 		
-		//Move the current state into closed
+		//Move the current state into closed, insert at head("Push")
 		curr_state->next=closed;
 		//Maintain closed properly
 		closed=curr_state;
