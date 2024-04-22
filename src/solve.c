@@ -35,7 +35,6 @@ struct state{
 
 
 /* The following global variables are defined for convenience */
-
 struct state* start_state;
 struct state* goal_state;
 
@@ -45,7 +44,6 @@ struct state* fringe = NULL;
 struct state* closed = NULL;
 //Every time a state is expanded, at most 4 successor states will be created
 struct state* succ_states[4];
-
 /* ========================================================== */
 
 
@@ -422,6 +420,9 @@ void check_repeating(int i, struct state* stateLinkedList){
 }
 
 
+/**
+ * The main function implements the entire A* solving algorithm in it
+ */
 int main(int argc, char** argv) {
 	//Check if the number of arguments is correct. If not, exit the program and print an error
 	if(argc != 17){
@@ -440,10 +441,10 @@ int main(int argc, char** argv) {
 	//Keep track of the current state that we are on
 	struct state *curr_state;
 
+	//Algorithm main loop -- while there are still states to be expanded, keep iterating until we find a solution
 	while (fringe!=NULL) {	
 		curr_state=fringe;
 		fringe=fringe->next;
-		
 
 		//Check to see if we have found the solution. If we did, we will print out the solution path and stop
 		if(states_same(curr_state, goal_state)){
