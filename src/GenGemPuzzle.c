@@ -1,25 +1,30 @@
+/**
+ * Author: Jack Robbins
+ * This simple program generates a 15 puzzle problem configuration that has been 
+ * "messed up" according to the inputted specification
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
+//Define some useful constants to avoid magic numbers
+//The gem puzzle is 4 rows * 4 columns = 16 tiles in total
 #define N 4
 #define NxN (N*N)
-#define TRUE 1
-#define FALSE 0
 
-struct state {
+
+struct simplified_state {
 	int tiles[N][N];
-	int f, g, h;
 	short zero_row, zero_column;   /* location (row and colum) of blank tile 0 */
-	struct state *next;
-	struct state *parent;          /* used to trace back the solution */
 };
 
 int goal_rows[NxN];
 int goal_columns[NxN];
 
-void swap(int row1,int column1,int row2,int column2, struct state * pstate){
+void swap(int row1,int column1,int row2,int column2, struct simplified_state * pstate){
 	int tile = pstate->tiles[row1][column1];
 	pstate->tiles[row1][column1]=pstate->tiles[row2][column2];
 	pstate->tiles[row2][column2]=tile;
@@ -27,30 +32,30 @@ void swap(int row1,int column1,int row2,int column2, struct state * pstate){
 
 
 /* 0 goes down by a row */
-void move_down(struct state * pstate){
+void move_down(struct simplified_state * pstate){
 	swap(pstate->zero_row, pstate->zero_column, pstate->zero_row+1, pstate->zero_column, pstate); 
 	pstate->zero_row++;
 }
 
 /* 0 goes right by a column */
-void move_right(struct state * pstate){
+void move_right(struct simplified_state * pstate){
 	swap(pstate->zero_row, pstate->zero_column, pstate->zero_row, pstate->zero_column+1, pstate); 
 	pstate->zero_column++;
 }
 
 /* 0 goes up by a row */
-void move_up(struct state * pstate){
+void move_up(struct simplified_state * pstate){
 	swap(pstate->zero_row, pstate->zero_column, pstate->zero_row-1, pstate->zero_column, pstate); 
 	pstate->zero_row--;
 }
 
 /* 0 goes left by a column */
-void move_left(struct state * pstate){
+void move_left(struct simplified_state* pstate){
 	swap(pstate->zero_row, pstate->zero_column, pstate->zero_row, pstate->zero_column-1, pstate); 
 	pstate->zero_column--;
 }
 
-void print_a_state(struct state *pstate, int format) {
+void print_a_state(struct simplified_state *pstate, int format) {
 	int i,j;
 	for (i=0;i<N;i++) {
 		for (j=0;j<N;j++) printf("%2d ",pstate->tiles[i][j]);
@@ -62,14 +67,13 @@ void print_a_state(struct state *pstate, int format) {
 
 int main(int argc,char **argv) {
 	int i,j,k,index,count;
-	struct state *pstate;
 
 	if(argc!=2 || sscanf(argv[1], "%d", &count)!=1) {
 		printf("%s #steps\n", argv[0]);
 		exit(1);
 	}
 
-	pstate=(struct state *) malloc(sizeof(struct state));
+	struct simplified_state* pstate=(struct simplified_state*) malloc(sizeof(struct simplified_state));
 	goal_rows[0]=3;
 	goal_columns[0]=3;
 
@@ -84,11 +88,6 @@ int main(int argc,char **argv) {
 	pstate->tiles[N-1][N-1]=0;	      /* empty tile=0 */
 	pstate->zero_row = N-1;
 	pstate->zero_column = N-1;
-	pstate->f=0;
-	pstate->g=0;
-	pstate->h=0;
-	pstate->next=NULL;
-	printf("goal state\n"); print_a_state(pstate, 0);
 
 	srand(time(NULL));
 	i=0;
@@ -113,13 +112,11 @@ int main(int argc,char **argv) {
 		}
   	}while(i<count);
 
-	printf("initial state:\n");
+	printf("Initial state in puzzle format:\n");
 	print_a_state(pstate, 0);
 
-	printf("initial state in one line:\n");
+	printf("Initial state in one line, for use in solve.c:\n");
 	print_a_state(pstate, 1);
 
 	return 0;
 }
-
-
