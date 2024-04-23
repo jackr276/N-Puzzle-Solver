@@ -11,7 +11,6 @@
 
 //Grid is 4 by 4, 16 tiles total
 #define N 4
-#define NxN (N*N)
 
 
 /**
@@ -105,7 +104,7 @@ void initialize_start_goal(char** argv){
 	
 	int row, col;
 	//To create the goal state, place the numbers 1-15 in the appropriate locations
-	for(int num = 1; num < NxN; num++){
+	for(int num = 1; num < N*N; num++){
 		//We can mathematically find row and column positions for inorder numbers
 		row = (num - 1) / N;
 		col = (num - 1) % N;
@@ -384,7 +383,7 @@ void generate_successors(struct state* predecessor){
  */
 int states_same(struct state* a, struct state* b) {
 	//Utilize memcmp function on the tiles for convenience
-	if (memcmp(a->tiles, b->tiles, sizeof(int)*NxN) == 0){
+	if (memcmp(a->tiles, b->tiles, sizeof(int) * N*N) == 0){
 		//Return 1 if they are the same, 1 corresponds to true
 		return 1;	
 	}
