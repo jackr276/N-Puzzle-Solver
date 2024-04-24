@@ -25,7 +25,6 @@ input=$(./gen $COMPLEXITY | tail -n 1)
 
 #Use the appropriate version of the program depending on what the user inputted
 if [[ $MULTITHREADED == "Y" ]] || [[ $MULTITHREADED == "y" ]]; then
-	echo "here"
 	./solve_multi_threaded $input 
 else
 	./solve $input
