@@ -400,17 +400,20 @@ void* generator_worker(void* threadParam){
 	
 		move_up(moved);
 	}
-
+	
 	//Whether it's null or not, put it into succ_states
 	succ_states[option] = moved;
 
-	//Now we must check for repeating
-	check_repeating(option, fringe);
-	check_repeating(option, closed);
-	//Update prediction function
-	update_prediction_function(option);
-	
-	//Threadwork down, no return value will be used
+	//Only do all of these steps if moved is not null
+	if(moved != NULL){
+		//Now we must check for repeating
+		check_repeating(option, fringe);
+		check_repeating(option, closed);
+		//Update prediction function
+		update_prediction_function(option);
+	}
+
+	//Threadwork done, no return value will be used
 	return NULL;
 }
 
