@@ -11,7 +11,8 @@ fi
 
 #Compile with aggressive warnings
 gcc -Wall -Wextra GenGemPuzzle.c -o gen
-gcc -Wall -Wextra -pthread solve.c -o solve
+gcc -Wall -Wextra solve.c -o solve
+gcc -Wall -Wextra -pthread solve_multi_threaded.c -o solve_multi_threaded
 
 #Get the complexity of the puzzle from the user
 read -p "Enter a positive integer for complexity of initial configuration: " COMPLEXITY

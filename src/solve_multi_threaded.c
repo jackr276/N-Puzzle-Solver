@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 //Grid is 4 by 4, 16 tiles total
 #define N 4
@@ -29,6 +30,13 @@ struct state{
 	struct state* predecessor;			
 };
 
+/**
+ * Define a structure for holding all thread parameters
+ */
+struct threadParam {
+	struct state* predecessor;
+	int option;	
+};
 
 /* The following global variables are defined for convenience */
 struct state* start_state;
@@ -294,91 +302,6 @@ void move_left(struct state* statePtr){
 
 
 /**
- * Performs a "deep copy" from the predecessor to the successor
- */
-void copyState(struct state* predecessor, struct state* successor){
-	//Copy over the tiles array
-	for(int i = 0; i < N; i++){
-		for(int j = 0; j < N; j++){
-			//Copy tile by tile
-			successor->tiles[i][j] = predecessor->tiles[i][j];
-		}
-	}
-
-	//Initialize the current travel to the predecessor travel + 1
-	successor->current_travel = predecessor->current_travel+1;
-	//Copy the zero row and column position
-	successor->zero_row = predecessor->zero_row;
-	successor->zero_column = predecessor->zero_column;
-	//Initialize the successor's next to be null
-	successor->next = NULL;
-	//Set the successors predecessor
-	successor->predecessor = predecessor;
-}
-
-
-/**
- * This function generates all possible successors to a state and stores them in the successor array
- * Note: 4 successors are not always possible, if a successor isn't possible, NULL will be put in its place 
- */
-void generate_successors(struct state* predecessor){
-	//Create four pointers, one for each possible move, and initialize to NULL by default
-	struct state* leftMove = NULL;
-	struct state* rightMove = NULL;
-	struct state* upMove = NULL;
-	struct state* downMove = NULL;
-	
-	//Generate successor by moving left one if possible
-	if(predecessor->zero_column > 0){
-		//Create a new state
-		leftMove = (struct state*)malloc(sizeof(struct state));
-		//Perform a deep copy on the state
-		copyState(predecessor, leftMove);
-		//Move right by one
-		move_left(leftMove);
-	}
-	//Put leftMove into the array
-	succ_states[0] = leftMove;
-
-	//Generate successor by moving right one if possible
-	if(predecessor->zero_column < N-1){
-		//Create a new state
-		rightMove = (struct state*)malloc(sizeof(struct state));
-		//Perform a deep copy on the state
-		copyState(predecessor, rightMove);
-		//Move right by one
-		move_right(rightMove);
-	}
-	//Put rightMove into the array
-	succ_states[1] = rightMove;
-	
-	//Generate successor by moving down one if possible
-	if(predecessor->zero_row < N-1){
-		//Create a new state
-		downMove = (struct state*)malloc(sizeof(struct state));
-		//Perform a deep copy on the state
-		copyState(predecessor, downMove);
-		//Move down by one
-		move_down(downMove);
-	}
-	//Put downMove into the array
-	succ_states[2] = downMove;
-	
-	//Generate successor by moving down one if possible
-	if(predecessor->zero_row > 0){
-		//Create a new state
-		upMove = (struct state*)malloc(sizeof(struct state));
-		//Perform a deep copy on the state
-		copyState(predecessor, upMove);
-		//Move up by one
-		move_up(upMove);
-	}
-	//Put upMove into the array
-	succ_states[3] = upMove;
-}
-
-
-/**
  * A simple helper function that will tell if two states are the same. To be used for filtering
  */
 int states_same(struct state* a, struct state* b) {
@@ -420,6 +343,105 @@ void check_repeating(int i, struct state* stateLinkedList){
 	}
 }
 
+
+/**
+ * Performs a "deep copy" from the predecessor to the successor
+ */
+void copyState(struct state* predecessor, struct state* successor){
+	//Copy over the tiles array
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			//Copy tile by tile
+			successor->tiles[i][j] = predecessor->tiles[i][j];
+		}
+	}
+
+	//Initialize the current travel to the predecessor travel + 1
+	successor->current_travel = predecessor->current_travel+1;
+	//Copy the zero row and column position
+	successor->zero_row = predecessor->zero_row;
+	successor->zero_column = predecessor->zero_column;
+	//Initialize the successor's next to be null
+	successor->next = NULL;
+	//Set the successors predecessor
+	successor->predecessor = predecessor;
+}
+
+
+void* generator_worker(void* threadParam){
+	struct state* moved = NULL;	
+	struct threadParam* parameters = (struct threadParam*)threadParam;
+	int option = parameters->option;
+
+	if(option == 0 && parameters->predecessor->zero_column > 0){
+		moved = (struct state*)malloc(sizeof(struct state));
+		copyState(parameters->predecessor, moved);
+
+		move_left(moved);
+	}
+
+	if(option == 1 && parameters->predecessor->zero_column < N-1){
+		moved = (struct state*)malloc(sizeof(struct state));
+		copyState(parameters->predecessor, moved);
+
+		move_right(moved);
+	}
+
+	if(option == 2 && parameters->predecessor->zero_row < N-1){
+		moved = (struct state*)malloc(sizeof(struct state));
+		copyState(parameters->predecessor, moved);
+		
+		move_down(moved);
+	}
+
+	if(option == 3 && parameters->predecessor->zero_row > 0){
+		moved = (struct state*)malloc(sizeof(struct state));
+		copyState(parameters->predecessor, moved);
+	
+		move_up(moved);
+	}
+	
+	//Whether it's null or not, put it into succ_states
+	succ_states[option] = moved;
+
+	//Only do all of these steps if moved is not null
+	if(moved != NULL){
+		//Now we must check for repeating
+		check_repeating(option, fringe);
+		check_repeating(option, closed);
+		//Update prediction function
+		update_prediction_function(option);
+	}
+
+	//Threadwork done, no return value will be used
+	return NULL;
+}
+
+
+/**
+ * This function generates all possible successors to a state and stores them in the successor array
+ * Note: 4 successors are not always possible, if a successor isn't possible, NULL will be put in its place 
+ */
+void generate_valid_successors(struct state* predecessor){
+	//We will create 4 threads, once for each successor
+	pthread_t thread_IDs[4];
+	struct threadParam* paramArr[4];
+
+	//Create all the threads
+	for(int i = 0; i < 4; i++){
+		paramArr[i] = (struct threadParam*)malloc(sizeof(struct threadParam));
+		paramArr[i]->predecessor = predecessor;
+		paramArr[i]->option = i;
+
+		pthread_create(&thread_IDs[i], NULL, generator_worker, paramArr[i]);
+	}
+
+	//rejoin all the threads
+	for(int i = 0; i < 4; i++){
+		pthread_join(thread_IDs[i], NULL);
+		free(paramArr[i]);
+	}
+}
 
 /**
  * Use an A* search algorithm to solve the 15-puzzle problem by implementing the A* main loop. If the solve function 
@@ -471,19 +493,15 @@ int solve(){
 			//We've found a solution, so the function should exit 
 			return 0;	
 		}
+		
+		//This part can benefit from multi-threading
+
 
 		//Generate successors to the current state once we know it isn't a solution
-		generate_successors(curr_state);
+		generate_valid_successors(curr_state);
+		//End-multi threading
 
-		//Go through each of the successor states, and check for repetition/update prediction function
-		for(int i = 0; i < 4; i++){
-			//Check each successor state against fringe and closed to see if it is repeating
-			check_repeating(i,fringe); 
-			check_repeating(i,closed);
-			//Update the prediction function on states that don't repeat
-			update_prediction_function(i); 
-		}
-	
+
 		//Add all necessary states to fringe now that we have checked for repeats and updated predictions 
 		merge_to_fringe(); 
 		
