@@ -419,7 +419,7 @@ void* generator_worker(void* threadParam){
  * This function generates all possible successors to a state and stores them in the successor array
  * Note: 4 successors are not always possible, if a successor isn't possible, NULL will be put in its place 
  */
-void generate_successors(struct state* predecessor){
+void generate_valid_successors(struct state* predecessor){
 	//We will create 4 threads, once for each successor
 	pthread_t thread_IDs[4];
 	struct threadParam* paramArr[4];
@@ -495,17 +495,7 @@ int solve(){
 
 
 		//Generate successors to the current state once we know it isn't a solution
-		generate_successors(curr_state);
-
-		//Go through each of the successor states, and check for repetition/update prediction function
-		for(int i = 0; i < 4; i++){
-			//Check each successor state against fringe and closed to see if it is repeating
-			check_repeating(i,fringe); 
-			check_repeating(i,closed);
-			//Update the prediction function on states that don't repeat
-			update_prediction_function(i); 
-		}
-
+		generate_valid_successors(curr_state);
 		//End-multi threading
 
 
