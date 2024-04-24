@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+//For timing
+#include <time.h>
+
 
 //Grid is 4 by 4, 16 tiles total
 #define N 4
@@ -428,12 +431,16 @@ void check_repeating(int i, struct state* stateLinkedList){
  * is successful, it will print the resulting solution path to the console as well.  
  */
 int solve(){
+	//We will keep track of the time taken to execute
+	clock_t begin = clock();
+
 	//We will keep track of the number of iterations as a sanity check for large problems
 	int iter = 0;
 	//Put the start state into the fringe to begin the search
 	fringe = start_state; 
 	//Maintain a pointer for the current state in the search
 	struct state* curr_state;
+
 
 	//Algorithm main loop -- while there are still states to be expanded, keep iterating until we find a solution
 	while (fringe != NULL) {
@@ -444,6 +451,11 @@ int solve(){
 
 		//Check to see if we have found the solution. If we did, we will print out the solution path and stop
 		if(states_same(curr_state, goal_state)){
+			//Stop the clock if we find solution
+			clock_t end = clock();
+			//Determine the time spent
+			double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
+
 			//Keep track of how long the path is	
 			int pathlen = 0;
 			//Keep a linked list for our solution path
@@ -459,8 +471,8 @@ int solve(){
 				//Increment the path length
 				pathlen++;
 			}
-			
-			printf("\nSolution found! Now displaying solution path\n");
+			//Print out the time taken to solve	
+			printf("\nSolution found in %.7f seconds! Now displaying solution path\n", time_spent);
 			//Display the path length for the user
 			printf("Path Length: %d\n", pathlen); 
 

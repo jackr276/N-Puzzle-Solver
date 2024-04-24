@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+//For timing
+#include <time.h>
 //For multi-threading functionality
 #include <pthread.h>
 
@@ -376,7 +378,11 @@ void copyState(struct state* predecessor, struct state* successor){
 }
 
 
-
+/**
+ * This worker thread function generates and checks the validity of a successor that is made by 
+ * moving up, down, left or right based on the option given. It will also update the prediction function
+ * of the successor if the successor is valid
+ */
 void* generator_worker(void* thread_params){
 	//Initialize a state pointer to be null by default
 	struct state* moved = NULL;	
@@ -476,6 +482,9 @@ void generate_valid_successors(struct state* predecessor){
  * is successful, it will print the resulting solution path to the console as well.  
  */
 int solve(){
+	//We will keep track of the time taken to execute
+	clock_t begin = clock();
+
 	//We will keep track of the number of iterations as a sanity check for large problems
 	int iter = 0;
 	//Put the start state into the fringe to begin the search
@@ -492,6 +501,11 @@ int solve(){
 
 		//Check to see if we have found the solution. If we did, we will print out the solution path and stop
 		if(states_same(curr_state, goal_state)){
+			//Stop the clock if we find a solution
+			clock_t end = clock();
+			//Determine the time spent
+			double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
+
 			//Keep track of how long the path is	
 			int pathlen = 0;
 			//Keep a linked list for our solution path
@@ -507,8 +521,8 @@ int solve(){
 				//Increment the path length
 				pathlen++;
 			}
-			
-			printf("\nSolution found! Now displaying solution path\n");
+			//Print out the time taken to solve	
+			printf("\nSolution found in %.7f seconds! Now displaying solution path\n", time_spent);
 			//Display the path length for the user
 			printf("Path Length: %d\n", pathlen); 
 
