@@ -451,7 +451,7 @@ void* generator_worker(void* thread_params){
  */
 void generate_valid_successors(struct state* predecessor){
 	//We will create 4 threads, once for each successor potential successor
-	pthread_t thread_IDs[4];
+	pthread_t thread_arr[4];
 	//We also need 4 thread_param structures 
 	struct thread_params* paramArr[4];
 
@@ -465,12 +465,12 @@ void generate_valid_successors(struct state* predecessor){
 		
 		//Spawn our worker threads, generator_worker is the thread funtion, and paramArr[i]
 		//is the needed struct input
-		pthread_create(&thread_IDs[i], NULL, generator_worker, paramArr[i]);
+		pthread_create(&thread_arr[i], NULL, generator_worker, paramArr[i]);
 	}
 
 	//rejoin all the threads
 	for(int i = 0; i < 4; i++){
-		pthread_join(thread_IDs[i], NULL);
+		pthread_join(thread_arr[i], NULL);
 		//Free the memory from the parameter structure
 		free(paramArr[i]);
 	}
