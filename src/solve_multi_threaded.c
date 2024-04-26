@@ -503,9 +503,11 @@ int solve(){
 		if(states_same(curr_state, goal_state)){
 			//Stop the clock if we find a solution
 			clock_t end_CPU = clock();
+
 			//Determine the time spent on the CPU
 			double time_spent_CPU = (double)(end_CPU - begin_CPU) / CLOCKS_PER_SEC;
 
+			//Now find the solution path by working backwords
 			//Keep track of how long the path is	
 			int pathlen = 0;
 			//Keep a linked list for our solution path

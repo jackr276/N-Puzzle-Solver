@@ -10,7 +10,6 @@
 #include <string.h>
 //For timing
 #include <time.h>
-#include <sys/time.h>
 
 
 //Grid is 4 by 4, 16 tiles total
