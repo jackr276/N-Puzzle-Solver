@@ -1,7 +1,5 @@
 /**
- * Author: Jack Robbins
- * This program implements an A* search algorithm to find the shortest solve path for the 15-puzzle problem
- * game. It takes in a 15-puzzle problem starting configuration in row-major order as a command line argument,
+ * Author: Jack Robbins This program implements an A* search algorithm to find the shortest solve path for the 15-puzzle problem game. It takes in a 15-puzzle problem starting configuration in row-major order as a command line argument,
  * and prints out the full solution path to the problem, step by step, if such a solution exists.
  *
  * Note: This is the single-threaded version of the solver
@@ -12,6 +10,7 @@
 #include <string.h>
 //For timing
 #include <time.h>
+#include <sys/time.h>
 
 
 //Grid is 4 by 4, 16 tiles total
@@ -431,8 +430,12 @@ void check_repeating(int i, struct state* stateLinkedList){
  * is successful, it will print the resulting solution path to the console as well.  
  */
 int solve(){
-	//We will keep track of the time taken to execute
-	clock_t begin = clock();
+	//Define two structures for actual (wall) time
+	struct timeval start_wall, end_wall;
+	//Get the CPU clock start time
+	clock_t begin_CPU = clock();
+	//Start the actual wall clock timer
+	gettimeofday(&start_wall, NULL);
 
 	//We will keep track of the number of iterations as a sanity check for large problems
 	int iter = 0;
@@ -451,11 +454,16 @@ int solve(){
 
 		//Check to see if we have found the solution. If we did, we will print out the solution path and stop
 		if(states_same(curr_state, goal_state)){
-			//Stop the clock if we find solution
-			clock_t end = clock();
-			//Determine the time spent
-			double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
+			//Stop the clocks if we find solution
+			clock_t end_CPU = clock();
+			gettimeofday(&end_wall, NULL);
 
+			//Determine the time spent for CPU time 
+			double time_spent_CPU = (double)(end_CPU - begin_CPU) / CLOCKS_PER_SEC;
+			//Determine the time spent in wall time, convert to seconds
+			double time_spent_wall = (end_wall.tv_sec - start_wall.tv_sec) + ((end_wall.tv_usec - start_wall.tv_usec) / 1000000.0);
+
+			//Now find the solution path
 			//Keep track of how long the path is	
 			int pathlen = 0;
 			//Keep a linked list for our solution path
@@ -472,7 +480,8 @@ int solve(){
 				pathlen++;
 			}
 			//Print out the time taken to solve	
-			printf("\nSolution found in %.7f seconds! Now displaying solution path\n", time_spent);
+			printf("\nSolution found!\nCPU time: %.7f seconds\nActual time: %.7f seconds\n", time_spent_CPU, time_spent_wall);
+			printf("\nNow displaying solution path\n");
 			//Display the path length for the user
 			printf("Path Length: %d\n", pathlen); 
 
