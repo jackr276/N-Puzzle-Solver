@@ -483,7 +483,7 @@ void generate_valid_successors(struct state* predecessor){
  */
 int solve(){
 	//We will keep track of the time taken to execute
-	clock_t begin = clock();
+	clock_t begin_CPU = clock();
 
 	//We will keep track of the number of iterations as a sanity check for large problems
 	int iter = 0;
@@ -502,9 +502,9 @@ int solve(){
 		//Check to see if we have found the solution. If we did, we will print out the solution path and stop
 		if(states_same(curr_state, goal_state)){
 			//Stop the clock if we find a solution
-			clock_t end = clock();
-			//Determine the time spent
-			double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
+			clock_t end_CPU = clock();
+			//Determine the time spent on the CPU
+			double time_spent_CPU = (double)(end_CPU - begin_CPU) / CLOCKS_PER_SEC;
 
 			//Keep track of how long the path is	
 			int pathlen = 0;
@@ -522,7 +522,10 @@ int solve(){
 				pathlen++;
 			}
 			//Print out the time taken to solve	
-			printf("\nSolution found in %.7f seconds! Now displaying solution path\n", time_spent);
+			printf("\nSolution found!\nTotal CPU time spent: %.7f seconds\n", time_spent_CPU);
+
+			//Print out solution path
+			printf("\nNow displaying solution path\n");
 			//Display the path length for the user
 			printf("Path Length: %d\n", pathlen); 
 

@@ -430,12 +430,8 @@ void check_repeating(int i, struct state* stateLinkedList){
  * is successful, it will print the resulting solution path to the console as well.  
  */
 int solve(){
-	//Define two structures for actual (wall) time
-	struct timeval start_wall, end_wall;
 	//Get the CPU clock start time
 	clock_t begin_CPU = clock();
-	//Start the actual wall clock timer
-	gettimeofday(&start_wall, NULL);
 
 	//We will keep track of the number of iterations as a sanity check for large problems
 	int iter = 0;
@@ -454,14 +450,11 @@ int solve(){
 
 		//Check to see if we have found the solution. If we did, we will print out the solution path and stop
 		if(states_same(curr_state, goal_state)){
-			//Stop the clocks if we find solution
+			//Stop the clock if we find solution
 			clock_t end_CPU = clock();
-			gettimeofday(&end_wall, NULL);
 
 			//Determine the time spent for CPU time 
 			double time_spent_CPU = (double)(end_CPU - begin_CPU) / CLOCKS_PER_SEC;
-			//Determine the time spent in wall time, convert to seconds
-			double time_spent_wall = (end_wall.tv_sec - start_wall.tv_sec) + ((end_wall.tv_usec - start_wall.tv_usec) / 1000000.0);
 
 			//Now find the solution path
 			//Keep track of how long the path is	
@@ -480,7 +473,9 @@ int solve(){
 				pathlen++;
 			}
 			//Print out the time taken to solve	
-			printf("\nSolution found!\nCPU time: %.7f seconds\nActual time: %.7f seconds\n", time_spent_CPU, time_spent_wall);
+			printf("\nSolution found!\nTotal CPU time spent: %.7f seconds\n", time_spent_CPU);
+
+			//Display solution path
 			printf("\nNow displaying solution path\n");
 			//Display the path length for the user
 			printf("Path Length: %d\n", pathlen); 
