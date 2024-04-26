@@ -63,7 +63,7 @@ struct state* succ_states[4];
 /**
  * Prints out a state by printing out the positions in the 4x4 grid
  */
-void print_a_state(struct state* statePtr) {
+void print_state(struct state* statePtr) {
 	//Go through tile by tile and print out
 	for (int i=0; i<N; i++) {
 		for (int j=0; j<N; j++){ 
@@ -114,7 +114,7 @@ void initialize_start_goal(char** argv){
 
 	//Print to the console for the user
 	printf("Initial state\n");
-	print_a_state(start_state);
+	print_state(start_state);
 
 
 	/* Now we create the goal state */	
@@ -140,7 +140,7 @@ void initialize_start_goal(char** argv){
 
 	//Print to the console for the user
 	printf("Goal state\n");
-	print_a_state(goal_state);
+	print_state(goal_state);
 }
 
 
@@ -533,7 +533,7 @@ int solve(){
 
 			//Print out the solution path in order
 			while(solution_path != NULL){
-				print_a_state(solution_path);
+				print_state(solution_path);
 				solution_path = solution_path->next;
 			}	
 
