@@ -61,21 +61,34 @@ struct state* succ_states[4];
 /* ========================================================== */
 
 
+/**
+ * The initialize_state function takes in a pointer to a state and reserves the appropriate space for the dynamic
+ * array that holds the tiles
+ */
 void initialize_state(struct state* statePtr){
+	//Declare all of the pointers needed for each row
 	statePtr->tiles = malloc(sizeof(int*) * N);
 
+	//For each row, allocate space for N integers
 	for(int i = 0; i < N; i++){
 		statePtr->tiles[i] = malloc(sizeof(int) * N);
 	}
 }
 
+
+/**
+ * The destroy_state function does the exact reverse of the initialize_state function to properly free memory
+ */
 void destroy_state(struct state* statePtr){
+	//Go through row by row, freeing each one
 	for(int i = 0; i < N; i++){
 		free(statePtr->tiles[i]);
 	}
 
+	//Once all rows are free, free the array of row pointers
 	free(statePtr->tiles);
 }
+
 
 /**
  * Prints out a state by printing out the positions in the 4x4 grid
@@ -100,7 +113,10 @@ void print_state(struct state* statePtr){
  */
 void initialize_start_goal(char** argv){
 	/* Begin by creating the start state */
+
+	//Create the start state itself
 	start_state=(struct state*)malloc(sizeof(struct state));
+	//Dynamically allocate memory needed in the start_state
 	initialize_state(start_state);
 
 	//Start at 1, argv[0] is program name
@@ -131,12 +147,15 @@ void initialize_start_goal(char** argv){
 	start_state->predecessor=NULL;
 
 	//Print to the console for the user
-	printf("Initial state\n");
+	printf("\nInitial state\n");
 	print_state(start_state);
 
 
 	/* Now we create the goal state */	
+	
+	//Create the goal state itself
 	goal_state=(struct state*)malloc(sizeof(struct state));
+	//Dynamically allocate all of the memory needed in the start state
 	initialize_state(goal_state);	
 
 	int row, col;
@@ -334,8 +353,11 @@ void move_left(struct state* statePtr){
  * A simple helper function that will tell if two states are the same. To be used for filtering
  */
 int states_same(struct state* a, struct state* b){
+	//Go through each row in the dynamic tile matrix in both states
 	for(int i = 0; i < N; i++){
+		//We can use memcmp to efficiently compare the space poitned to by each pointer
 		if (memcmp(a->tiles[i], b->tiles[i], sizeof(int) * N) != 0){
+			//If we find a difference, return 0
 			return 0;
 		}
 	}
@@ -361,8 +383,9 @@ void check_repeating(int i, struct state* stateLinkedList){
 	while(cursor != NULL){
 		//If the states match, we free the pointer and exit the loop
 		if(states_same(succ_states[i], cursor)){
-			//Free the duplicate state
+			//Properly tear down the dynamic array in the state to avoid memory leaks
 			destroy_state(succ_states[i]);
+			//Free the pointer to the state
 			free(succ_states[i]);
 			//Set the pointer to be null as a warning
 			succ_states[i] = NULL;
@@ -416,6 +439,7 @@ void* generator_worker(void* thread_params){
 	if(option == 0 && parameters->predecessor->zero_column > 0){
 		//Create the new state
 		moved = (struct state*)malloc(sizeof(struct state));
+		//Dynamically allocate the space needed in the state
 		initialize_state(moved);
 		//Perform a deep copy from predecessor to successor
 		copyState(parameters->predecessor, moved);
@@ -426,6 +450,7 @@ void* generator_worker(void* thread_params){
 	} else if(option == 1 && parameters->predecessor->zero_column < N-1){
 		//Create the new state
 		moved = (struct state*)malloc(sizeof(struct state));
+		//Dynamically allocate the space needed in the state
 		initialize_state(moved);
 		//Perform a deep copy from predecessor to successor
 		copyState(parameters->predecessor, moved);
@@ -436,6 +461,7 @@ void* generator_worker(void* thread_params){
 	} else if(option == 2 && parameters->predecessor->zero_row < N-1){
 		//Create the new state
 		moved = (struct state*)malloc(sizeof(struct state));
+		//Dynamically allocate the space needed in the state
 		initialize_state(moved);
 		//Perform a deep copy from predecessor to successor
 		copyState(parameters->predecessor, moved);
@@ -446,6 +472,7 @@ void* generator_worker(void* thread_params){
 	} else if(option == 3 && parameters->predecessor->zero_row > 0){
 		//Create the new state
 		moved = (struct state*)malloc(sizeof(struct state));
+		//Dynamically allocate the space needed in the state
 		initialize_state(moved);
 		//Perform a deep copy from predecessor to successor
 		copyState(parameters->predecessor, moved);
@@ -594,7 +621,7 @@ int solve(){
 	}
 	
 	//If we end up here, fringe became NULL with no goal configuration found, so there is no solution
-	printf("No solution.");
+	printf("No solution.\n");
 	return 0;
 }
 
@@ -604,12 +631,11 @@ int solve(){
  * line arguments
  */
 int main(int argc, char** argv){
-	if(sscanf(argv[1], "%d", &N) != 1){
+	//If the user put in a non-integer or a nonpositive integer, print an error
+	if(sscanf(argv[1], "%d", &N) != 1 || N < 1){
 		printf("Program arguments must be positive integers\n");
+		return 1;
 	}
-
-	//Move the address up to exlude the N number
-	argv += 1;
 
 	//Check if the number of arguments is correct. If not, exit the program and print an error
 	if(argc != N*N + 2){
@@ -617,6 +643,10 @@ int main(int argc, char** argv){
 		printf("Incorrect number of program arguments. Please retry with a correct configuration.\n");
 		return 1;
 	}
+
+	//Important: Move the address up by 1 so that initialize_start_goal can only see the initial config
+	argv += 1;
+
 
 	//Initialize the goal and start states 
 	initialize_start_goal(argv);

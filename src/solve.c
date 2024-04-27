@@ -47,7 +47,7 @@ struct state* succ_states[4];
 
 /**
  * The initialize_state function takes in a pointer to a state and reserves the appropriate space for the dynamic array
- * that holds the tiles. 
+ * that holds the tiles 
  */
 void initialize_state(struct state* statePtr){
 	//Declare all of the pointers needed for each row
@@ -61,10 +61,10 @@ void initialize_state(struct state* statePtr){
 
 
 /**
- * The destroy_state function does the exact reverse of the initialize_state function to properly free memory.
+ * The destroy_state function does the exact reverse of the initialize_state function to properly free memory
  */
 void destroy_state(struct state* statePtr){
-	//Go through each row, freeing each one
+	//Go through row by row, freeing each one
 	for(int i = 0; i < N; i++){
 		free(statePtr->tiles[i]);
 	}
@@ -131,7 +131,7 @@ void initialize_start_goal(char** argv){
 	start_state->predecessor=NULL;
 
 	//Print to the console for the user
-	printf("Initial state\n");
+	printf("\nInitial state\n");
 	print_state(start_state);
 
 
@@ -527,7 +527,7 @@ int solve(){
 			//Display solution path
 			printf("\nNow displaying solution path\n");
 			//Display the path length for the user
-			printf("Path Length: %d\n", pathlen); 
+			printf("Path Length: %d\n\n", pathlen); 
 
 			//Print out the solution path in order
 			while(solution_path != NULL){
@@ -569,7 +569,7 @@ int solve(){
 	}
 	
 	//If we end up here, fringe became NULL with no goal configuration found, so there is no solution
-	printf("No solution.");
+	printf("No solution.\n");
 	return 0;
 }
 
@@ -582,6 +582,7 @@ int main(int argc, char** argv){
 	//If the user put in a non-integer or nonpositive integer, print an error
 	if(sscanf(argv[1], "%d", &N) != 1 || N < 1){
 		printf("Program arguments must be positive integers\n");
+		return 1;
 	}
 
 	//Check if the number of arguments is correct. If not, exit the program and print an error
