@@ -1,6 +1,7 @@
 /**
- * Author: Jack Robbins This program implements an A* search algorithm to find the shortest solve path for the 15-puzzle problem game. It takes in an N-puzzle problem starting configuration in row-major order as a command line argument,
- * and prints out the full solution path to the problem, step by step, if such a solution exists.
+ * Author: Jack Robbins This program implements an A* search algorithm to find the shortest solve path for the 15-puzzle problem game. 
+ * It takes in an N-puzzle problem starting configuration in row-major order as a command line argument, following a number N for the
+ * NxN size of the puzzle and prints out the full solution path to the problem, step by step, if such a solution exists.
  *
  * Note: This is the single-threaded version of the solver
  */
@@ -96,16 +97,20 @@ void print_state(struct state* statePtr){
  */
 void initialize_start_goal(char** argv){
 	/* Begin by creating the start state */
+
+	//Create the start state itself
 	start_state=(struct state*)malloc(sizeof(struct state));
+	//Dynamically allocate memory needed in the start_state
 	initialize_state(start_state);
-	//Start at 1, argv[0] is program name
+
+	//Start at 1, argv[0] is program name and argv has been adjusted up by 1 to only contain the start state information
 	int index = 1;
 	int tile;
 
 	//Insert everything into the tiles matrix
 	for (int i = 0; i < N; i++){
 		for (int j = 0; j < N; j++){
-			//Grab the specific tile number from the arguments and place it into the start state	
+			//Grab the specific tile number from the arguments and place it into the start state
 			tile=atoi(argv[index++]);
 			start_state->tiles[i][j]=tile;
 
@@ -131,8 +136,12 @@ void initialize_start_goal(char** argv){
 
 
 	/* Now we create the goal state */	
+	
+	//Create the goal state itself
 	goal_state=(struct state*)malloc(sizeof(struct state));
+	//Dynamically allocate the memory needed in the goal_state
 	initialize_state(goal_state);	
+
 	int row, col;
 	//To create the goal state, place the numbers 1-15 in the appropriate locations
 	for(int num = 1; num < N*N; num++){
@@ -217,7 +226,7 @@ void merge_to_fringe(){
 
 /**
  * Update the prediction function for the state pointed to by succ_states[i]. If this pointer is null, simply skip updating
- * and return
+ * and return. This is a generic algorithm, so it will work for any size N
  */ 
 void update_prediction_function(int i){
 	struct state* statePtr = succ_states[i];
@@ -362,6 +371,7 @@ void generate_successors(struct state* predecessor){
 	if(predecessor->zero_column > 0){
 		//Create a new state
 		leftMove = (struct state*)malloc(sizeof(struct state));
+		//Dynamically allocate the memory needed in leftMove
 		initialize_state(leftMove);
 		//Perform a deep copy on the state
 		copyState(predecessor, leftMove);
@@ -375,6 +385,7 @@ void generate_successors(struct state* predecessor){
 	if(predecessor->zero_column < N-1){
 		//Create a new state
 		rightMove = (struct state*)malloc(sizeof(struct state));
+		//Dynamically allocate the memory needed in rightMove
 		initialize_state(rightMove);
 		//Perform a deep copy on the state
 		copyState(predecessor, rightMove);
@@ -388,6 +399,7 @@ void generate_successors(struct state* predecessor){
 	if(predecessor->zero_row < N-1){
 		//Create a new state
 		downMove = (struct state*)malloc(sizeof(struct state));
+		//Dynamically allocate the memory needed in downMove
 		initialize_state(downMove);
 		//Perform a deep copy on the state
 		copyState(predecessor, downMove);
@@ -401,6 +413,7 @@ void generate_successors(struct state* predecessor){
 	if(predecessor->zero_row > 0){
 		//Create a new state
 		upMove = (struct state*)malloc(sizeof(struct state));
+		//Dynamically allocate the memory needed in upMove
 		initialize_state(upMove);
 		//Perform a deep copy on the state
 		copyState(predecessor, upMove);
@@ -416,8 +429,11 @@ void generate_successors(struct state* predecessor){
  * A simple helper function that will tell if two states are the same. To be used for filtering
  */
 int states_same(struct state* a, struct state* b){
+	//Go through each row in the dynamic tile matrix in both states
 	for(int i = 0; i < N; i++){
+		//We can use memcmp to efficiently compare the space pointed to by each pointer
 		if (memcmp(a->tiles[i], b->tiles[i], sizeof(int) * N) != 0){
+			//If we find a difference, return 0
 			return 0;
 		}
 	}
@@ -443,8 +459,9 @@ void check_repeating(int i, struct state* stateLinkedList){
 	while(cursor != NULL){
 		//If the states match, we free the pointer and exit the loop
 		if(states_same(succ_states[i], cursor)){
-			//Free the duplicate state
+			//Properly tear down the dynamic array in the state to avoid memory leaks
 			destroy_state(succ_states[i]);
+			//Free the pointer to the state
 			free(succ_states[i]);
 			//Set the pointer to be null as a warning
 			succ_states[i] = NULL;
@@ -561,13 +578,11 @@ int solve(){
  * The main function simply makes the needed calls to the initialize and solve function after checking command
  * line arguments
  */
-int main(int argc, char** argv){	
-	if(sscanf(argv[1], "%d", &N) != 1){
+int main(int argc, char** argv){
+	//If the user put in a non-integer or nonpositive integer, print an error
+	if(sscanf(argv[1], "%d", &N) != 1 || N < 1){
 		printf("Program arguments must be positive integers\n");
 	}
-
-	//Move the address up to exclude the N number
-	argv += 1;
 
 	//Check if the number of arguments is correct. If not, exit the program and print an error
 	if(argc != N*N + 2){
@@ -576,6 +591,8 @@ int main(int argc, char** argv){
 		return 1;
 	}
 
+	//Important: Move the address of argv up by 1 so that initialize_start_goal can only see the initial config 
+	argv += 1;
 
 	//Initialize the goal and start states 
 	initialize_start_goal(argv);

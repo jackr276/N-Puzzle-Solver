@@ -1,8 +1,9 @@
 /**
  * Author: Jack Robbins
  * This program implements an A* search algorithm to find the shortest solve path for the 15-puzzle problem
- * game. It takes in a 15-puzzle problem starting configuration in row-major order as a command line argument,
- * and prints out the full solution path to the problem, step by step, if such a solution exists.
+ * game. It takes in an N-puzzle problem starting configuration in row-major order as a command line argument, following
+ * a number N that represents the NxN size of the puzzle, and prints out the full solution path to the problem,
+ * step by step, if such a solution exists.
  *
  * NOTE: This is the multi-threaded version of the solver, using pthreads
  */
