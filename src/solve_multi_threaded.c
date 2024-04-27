@@ -581,7 +581,7 @@ int solve(){
 			//Print out solution path
 			printf("\nNow displaying solution path\n");
 			//Display the path length for the user
-			printf("Path Length: %d\n", pathlen); 
+			printf("Path Length: %d\n\n", pathlen); 
 
 			//Print out the solution path in order
 			while(solution_path != NULL){
