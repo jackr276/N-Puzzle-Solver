@@ -1,7 +1,9 @@
 /**
  * Author: Jack Robbins
- * This simple program generates a 15 puzzle problem configuration that has been 
- * "messed up" according to the inputted specification
+ * This simple program generates a 15 puzzle problem configuration that has been "messed up" according to the inputted
+ * specification. Takes in the N number of rows and columns, and the amount of random moves that the user wishes to 
+ * make. In theory -> more moves = more complex and harder to solve starting state
+ *
  */
 
 
@@ -14,6 +16,7 @@
 //Gem puzzle is 4 rows by 4 columns by default, but this will be changed by user input
 int N = 4; 
 
+
 //Define a simplified state struct for the generation process. We only need the tiles and zero_row and column
 struct simplified_state{
 	//Define the tiles as an N by N array
@@ -22,47 +25,89 @@ struct simplified_state{
 };
 
 
-void swap(int row1,int column1,int row2,int column2, struct simplified_state * pstate){
-	int tile = pstate->tiles[row1][column1];
-	pstate->tiles[row1][column1]=pstate->tiles[row2][column2];
-	pstate->tiles[row2][column2]=tile;
+/**
+ * A simple functions that swaps two tiles in the provided state
+ * Note: The swap function assumes all row positions are valid, this must be checked by the caller
+ */
+void swap(int row1,int column1,int row2,int column2, struct simplified_state* statePtr){
+	//Store the first tile in a temp variable
+	int tile = statePtr->tiles[row1][column1];
+	//Put the tile from row2, column2 into row1, column1
+	statePtr->tiles[row1][column1] = statePtr->tiles[row2][column2];
+	//Put the temp in row2, column2
+	statePtr->tiles[row2][column2] = tile;
 }
 
 
-/* 0 goes down by a row */
-void move_down(struct simplified_state * pstate){
-	swap(pstate->zero_row, pstate->zero_column, pstate->zero_row+1, pstate->zero_column, pstate); 
-	pstate->zero_row++;
+/**
+ * Move the 0 slider down by 1 row
+ */
+void move_down(struct simplified_state* statePtr){
+	//Utilize the swap function to move the zero row down by 1
+	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr); 
+	//Increment the zero row to keep the position accurate
+	statePtr->zero_row++;
 }
 
-/* 0 goes right by a column */
-void move_right(struct simplified_state * pstate){
-	swap(pstate->zero_row, pstate->zero_column, pstate->zero_row, pstate->zero_column+1, pstate); 
-	pstate->zero_column++;
+
+/**
+ * Move the 0 slider right by 1 column
+ */
+void move_right(struct simplified_state* statePtr){
+	//Utilize the swap function to move the zero column right by 1
+	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr); 
+	//Increment the zero_column to keep the position accurate
+	statePtr->zero_column++;
 }
 
-/* 0 goes up by a row */
-void move_up(struct simplified_state * pstate){
-	swap(pstate->zero_row, pstate->zero_column, pstate->zero_row-1, pstate->zero_column, pstate); 
-	pstate->zero_row--;
+
+/**
+ * Move the 0 slider up by 1 row
+ */
+void move_up(struct simplified_state* statePtr){
+	//Utilize the swap function to move the zero row up by 1
+	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr); 
+	//Decrement the zero_row to keep the position accurate
+	statePtr->zero_row--;
 }
 
-/* 0 goes left by a column */
-void move_left(struct simplified_state* pstate){
-	swap(pstate->zero_row, pstate->zero_column, pstate->zero_row, pstate->zero_column-1, pstate); 
-	pstate->zero_column--;
+
+/**
+ * Move the 0 left by 1 column
+ */
+void move_left(struct simplified_state* statePtr){
+	//Utilize the swap function to move the zero_column left by 1
+	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column-1, statePtr); 
+	//Decrement the zero_column to keep the position accurate
+	statePtr->zero_column--;
 }
 
-void print_a_state(struct simplified_state *pstate, int format) {
-	int i,j;
-	for (i=0;i<N;i++) {
-		for (j=0;j<N;j++) printf("%2d ",pstate->tiles[i][j]);
-		if(format==0)
+
+/**
+ * Prints out a state either in matrix format(option 0) or single row format(option 1)
+ */
+void print_state(struct simplified_state* statePtr, int format) {
+	//Go through each tile in the state, printing out its value 
+	for (int i = 0; i < N; i++) {
+		for (int j = 0; j < N; j++){
+			//Print the tile to the console
+			printf("%2d ", statePtr->tiles[i][j]);
+		}
+		//If the option is for matrix format, put a newline after every row
+		if(format==0){
 			printf("\n");
+		}
 	}
+
+	//For formatting
 	printf("\n");
 }
 
+
+/**
+ * The main function handles all input checking, creating the state, and "messing up" the state sufficiently, after which
+ * it will print both the matrix version and the one line version of the state to the console
+ */
 int main(int argc, char** argv) {
 	//If there aren't enough program arguments, print an error and exit
 	if(argc != 3){
@@ -110,7 +155,9 @@ int main(int argc, char** argv) {
 	//Set the seed for our random number generation
 	srand(time(NULL));
 
+	//Counter for while loop
 	int i=0;
+
 	//A variable to store our random move numbers in
 	int random_move;
 	//The main loop of our program. Keep randomly messing up the goal config as many times as specified
@@ -148,11 +195,11 @@ int main(int argc, char** argv) {
 
 	//Print the initial state in puzzle(matrix) format
 	printf("Initial state in puzzle format:\n");
-	print_a_state(statePtr, 0);
+	print_state(statePtr, 0);
 
 	//Print the initial state for actual use in solve.c
 	printf("Initial state in one line, for use in solve.c:\n");
-	print_a_state(statePtr, 1);
+	print_state(statePtr, 1);
 
 	return 0;
 }
