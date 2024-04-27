@@ -15,13 +15,12 @@
 //For multi-threading functionality
 #include <pthread.h>
 
-int N = 4;
 
 /**
  * Defines a type of state, which is a structure, that represents a configuration in the gem puzzle game
  */
 struct state{
-	//There are 4x4 = 16 tiles in the game
+	//Define a dynamic 2D array for the tiles since we have a variable puzzle size
 	int** tiles;
 	//For A*, define the total_cost, how far the tile has traveled, and heuristic cost
 	int total_cost, current_travel, heuristic_cost;
@@ -45,6 +44,22 @@ struct thread_params{
 	int option;	
 };
 
+
+/* The following global variables are defined for convenience */
+//N is the NxN size of the puzzle, defined by the user
+int N;
+//The start and goal states
+struct state* start_state;
+struct state* goal_state;
+//The fringe is the set of all states open for exploration. It is maintained as a linked list
+struct state* fringe = NULL;
+//Closed is a linked list containing all sets previously examined. This is used to avoid repeating
+struct state* closed = NULL;
+//Every time a state is expanded, at most 4 successor states will be created
+struct state* succ_states[4];
+/* ========================================================== */
+
+
 void initialize_state(struct state* statePtr){
 	statePtr->tiles = malloc(sizeof(int*) * N);
 
@@ -60,18 +75,6 @@ void destroy_state(struct state* statePtr){
 
 	free(statePtr->tiles);
 }
-
-/* The following global variables are defined for convenience */
-struct state* start_state;
-struct state* goal_state;
-//The fringe is the set of all states open for exploration. It is maintained as a linked list
-struct state* fringe = NULL;
-//Closed is a linked list containing all sets previously examined. This is used to avoid repeating
-struct state* closed = NULL;
-//Every time a state is expanded, at most 4 successor states will be created
-struct state* succ_states[4];
-/* ========================================================== */
-
 
 /**
  * Prints out a state by printing out the positions in the 4x4 grid

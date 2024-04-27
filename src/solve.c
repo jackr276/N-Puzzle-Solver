@@ -1,5 +1,5 @@
 /**
- * Author: Jack Robbins This program implements an A* search algorithm to find the shortest solve path for the 15-puzzle problem game. It takes in a 15-puzzle problem starting configuration in row-major order as a command line argument,
+ * Author: Jack Robbins This program implements an A* search algorithm to find the shortest solve path for the 15-puzzle problem game. It takes in an N-puzzle problem starting configuration in row-major order as a command line argument,
  * and prints out the full solution path to the problem, step by step, if such a solution exists.
  *
  * Note: This is the single-threaded version of the solver
@@ -12,12 +12,11 @@
 #include <time.h>
 
 
-int N = 4;
-
 /**
  * Defines a type of state, which is a structure, that represents a configuration in the gem puzzle game
  */
 struct state {
+	//Define a dynamic 2D array for the tiles since we have a variable puzzle size
 	int** tiles;
 	//For A*, define the total_cost, how far the tile has traveled, and heuristic cost int total_cost, current_travel, heuristic_cost;
 	int total_cost, current_travel, heuristic_cost;
@@ -31,6 +30,9 @@ struct state {
 
 
 /* The following global variables are defined for convenience */
+//N is the NxN size of the puzzle, defined by the user
+int N;
+//The starting and goal states
 struct state* start_state;
 struct state* goal_state;
 //The fringe is the set of all states open for exploration. It is maintained as a linked list
@@ -42,22 +44,33 @@ struct state* succ_states[4];
 /* ========================================================== */
 
 
+/**
+ * The initialize_state function takes in a pointer to a state and reserves the appropriate space for the dynamic array
+ * that holds the tiles. 
+ */
 void initialize_state(struct state* statePtr){
+	//Declare all of the pointers needed for each row
 	statePtr->tiles = malloc(sizeof(int*) * N);
 
+	//For each row, allocate space for N integers
 	for(int i = 0; i < N; i++){
 		statePtr->tiles[i] = malloc(sizeof(int) * N);
 	}
 }
 
+
+/**
+ * The destroy_state function does the exact reverse of the initialize_state function to properly free memory.
+ */
 void destroy_state(struct state* statePtr){
+	//Go through each row, freeing each one
 	for(int i = 0; i < N; i++){
 		free(statePtr->tiles[i]);
 	}
 
+	//Once all rows are free, free the array of row pointers
 	free(statePtr->tiles);
 }
-
 
 
 /**
