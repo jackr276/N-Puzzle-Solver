@@ -1,3 +1,3 @@
-src/gen
+src/generate_start_config
 src/solve
 src/solve_multi_threaded

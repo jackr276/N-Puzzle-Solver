@@ -19,7 +19,7 @@
 /**
  * Defines a type of state, which is a structure, that represents a configuration in the gem puzzle game
  */
-struct state{
+struct state {
 	//There are 4x4 = 16 tiles in the game
 	int tiles[N][N];
 	//For A*, define the total_cost, how far the tile has traveled, and heuristic cost
@@ -48,7 +48,7 @@ struct state* succ_states[4];
 /**
  * Prints out a state by printing out the positions in the 4x4 grid
  */
-void print_state(struct state* statePtr) {
+void print_state(struct state* statePtr){
 	//Go through tile by tile and print out
 	for (int i=0; i<N; i++) {
 		for (int j=0; j<N; j++){ 
@@ -178,7 +178,7 @@ void priority_queue_insert(int i){
  * This function simply iterates through succ_states, passing the appropriate indices along to priority_queue_insert if the pointers
  * are not null
  */
-void merge_to_fringe() { 
+void merge_to_fringe(){ 
 	//Iterate through succ_states, if the given state is not null, call the priority_queue_insert function on it
 	for(int i = 0; i < 4; i++){
 		if(succ_states[i] != NULL){
@@ -192,7 +192,7 @@ void merge_to_fringe() {
  * Update the prediction function for the state pointed to by succ_states[i]. If this pointer is null, simply skip updating
  * and return
  */ 
-void update_prediction_function(int i) {
+void update_prediction_function(int i){
 	struct state* statePtr = succ_states[i];
 	//If statePtr is null, this state was a repeat and has been freed, so don't calculate anything
 	if(statePtr == NULL){
@@ -384,7 +384,7 @@ void generate_successors(struct state* predecessor){
 /**
  * A simple helper function that will tell if two states are the same. To be used for filtering
  */
-int states_same(struct state* a, struct state* b) {
+int states_same(struct state* a, struct state* b){
 	//Utilize memcmp function on the tiles for convenience
 	if (memcmp(a->tiles, b->tiles, sizeof(int) * N*N) == 0){
 		//Return 1 if they are the same, 1 corresponds to true
@@ -441,7 +441,7 @@ int solve(){
 
 
 	//Algorithm main loop -- while there are still states to be expanded, keep iterating until we find a solution
-	while (fringe != NULL) {
+	while (fringe != NULL){
 		//Remove or "pop" the head of the fringe linked list -- because fringe is a priority queue, this is the most
 		//promising state to explore next
 		curr_state=fringe;
@@ -528,7 +528,7 @@ int solve(){
  * The main function simply makes the needed calls to the initialize and solve function after checking command
  * line arguments
  */
-int main(int argc, char** argv) {
+int main(int argc, char** argv){
 	//Check if the number of arguments is correct. If not, exit the program and print an error
 	if(argc != 17){
 		//Give an error message

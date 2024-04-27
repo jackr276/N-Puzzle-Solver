@@ -8,21 +8,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+//For random move generation
 #include <time.h>
 
-//Define some useful constants to avoid magic numbers
 //The gem puzzle is 4 rows * 4 columns = 16 tiles in total
 #define N 4
-#define NxN (N*N)
 
 
-struct simplified_state {
+//Define a simplified state struct for the generation process. We only need the tiles and zero_row and column
+struct simplified_state{
+	//Define the tiles as an N by N array
 	int tiles[N][N];
-	short zero_row, zero_column;   /* location (row and colum) of blank tile 0 */
+	short zero_row, zero_column;
 };
 
-int goal_rows[NxN];
-int goal_columns[NxN];
 
 void swap(int row1,int column1,int row2,int column2, struct simplified_state * pstate){
 	int tile = pstate->tiles[row1][column1];
@@ -65,58 +64,66 @@ void print_a_state(struct simplified_state *pstate, int format) {
 	printf("\n");
 }
 
-int main(int argc,char **argv) {
-	int i,j,k,index,count;
-
-	if(argc!=2 || sscanf(argv[1], "%d", &count)!=1) {
-		printf("%s #steps\n", argv[0]);
+int main(int argc,char** argv) {
+	//If there aren't enough program arguments, print an error and exit
+	if(argc != 2){
+		printf("\nIncorrect number of program arguments.\n");
+		printf("Usage: ./generate_start_config <n>\nWhere <n> is initial complexity.\n\n");
 		exit(1);
 	}
 
-	struct simplified_state* pstate=(struct simplified_state*) malloc(sizeof(struct simplified_state));
-	goal_rows[0]=3;
-	goal_columns[0]=3;
+	//Once we know there are the right amount of arguments, attempt to scan the number of moves into numMoves
+	int num_moves;
+	//If scanning into a decimnal doesn't work, we know something went wrong
+	if(sscanf(argv[1], "%d", &num_moves) != 1){
+		//Print an error and exit
+		printf("\nIncorrect type of program arguments.\n");
+		printf("Usage: ./generate_start_config <n>\nWhere <n> is a positive integer.\n\n");
+		exit(1);
+	}
 
-	for(index=1; index<NxN; index++){
+	int i,j,k;
+	//Create the 
+	struct simplified_state* statePtr = (struct simplified_state*)malloc(sizeof(struct simplified_state));
+
+	for(int index=1; index<N*N; index++){
 		j=(index-1)/N;
 		k=(index-1)%N;
-		goal_rows[index]=j;
-		goal_columns[index]=k;
-		pstate->tiles[j][k]=index;
+		statePtr->tiles[j][k]=index;
 
 	}
-	pstate->tiles[N-1][N-1]=0;	      /* empty tile=0 */
-	pstate->zero_row = N-1;
-	pstate->zero_column = N-1;
+	statePtr->tiles[N-1][N-1]=0;
+	statePtr->zero_row = N-1;
+	statePtr->zero_column = N-1;
 
 	srand(time(NULL));
 	i=0;
 	do{
 		j = rand();
 		k = j % 4;
-  		if( k == 0 && pstate->zero_row>0){
-     			move_up(pstate);
+  		if( k == 0 && statePtr->zero_row>0){
+     			move_up(statePtr);
 			i++;
 		}
-  		if( k == 1 && pstate->zero_row<N-1){
-     			move_down(pstate);
+  		if( k == 1 && statePtr->zero_row<N-1){
+     			move_down(statePtr);
 			i++;
 		}
-  		if( k == 2 && pstate->zero_column>0){
-     			move_left(pstate);
+  		if( k == 2 && statePtr->zero_column>0){
+     			move_left(statePtr);
 			i++;
 		}
-  		if( k == 3 && pstate->zero_column<N-1){
-     			move_right(pstate);
+  		if( k == 3 && statePtr->zero_column<N-1){
+     			move_right(statePtr);
 			i++;
 		}
-  	}while(i<count);
+  	}while(i<num_moves);
 
 	printf("Initial state in puzzle format:\n");
-	print_a_state(pstate, 0);
+	print_a_state(statePtr, 0);
 
 	printf("Initial state in one line, for use in solve.c:\n");
-	print_a_state(pstate, 1);
+	print_a_state(statePtr, 1);
 
 	return 0;
 }
