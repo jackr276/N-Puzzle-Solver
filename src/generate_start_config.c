@@ -82,46 +82,70 @@ int main(int argc,char** argv) {
 		exit(1);
 	}
 
-	int i,j,k;
-	//Create the 
+	//Create the simplified state that we will use for generation
 	struct simplified_state* statePtr = (struct simplified_state*)malloc(sizeof(struct simplified_state));
 
-	for(int index=1; index<N*N; index++){
-		j=(index-1)/N;
-		k=(index-1)%N;
-		statePtr->tiles[j][k]=index;
-
+	int row, col;
+	//Now generate the goal state. Once we create the goal state, we will "mess it up" according to the input number
+	for(int index=1; index < N*N; index++){
+		//Mathematically generate row position for goal by integer dividing the number by N
+		row = (index-1) / N;
+		//Mathematically generate column position for goal by finding remainder of row division
+		col = (index-1) % N;
+		//Put the index in the correct position
+		statePtr->tiles[row][col]=index;
 	}
-	statePtr->tiles[N-1][N-1]=0;
+	
+	//Now that we have generated and placed numbers 1-15, we will put the 0 slider in the very last slot
+	statePtr->tiles[N-1][N-1] = 0;
+	//Initialize the zero_row and zero_column position for use later
 	statePtr->zero_row = N-1;
 	statePtr->zero_column = N-1;
 
+	//Set the seed for our random number generation
 	srand(time(NULL));
-	i=0;
-	do{
-		j = rand();
-		k = j % 4;
-  		if( k == 0 && statePtr->zero_row>0){
-     			move_up(statePtr);
-			i++;
-		}
-  		if( k == 1 && statePtr->zero_row<N-1){
-     			move_down(statePtr);
-			i++;
-		}
-  		if( k == 2 && statePtr->zero_column>0){
-     			move_left(statePtr);
-			i++;
-		}
-  		if( k == 3 && statePtr->zero_column<N-1){
-     			move_right(statePtr);
-			i++;
-		}
-  	}while(i<num_moves);
 
+	int i=0;
+	//A variable to store our random move numbers in
+	int random_move;
+	//The main loop of our program. Keep randomly messing up the goal config as many times as specified
+	//In theory -- higher number inputted = more complex config
+	while(i < num_moves){
+		//Get a random number from 0 to 4
+		random_move = rand() % 4;	
+
+		//We will keep the same convention as in the solver
+		// 0 = left move, 1 = right move, 2 = down move , 3 = up move
+		
+		//Move left if possible and random_move is 0
+		if(random_move == 0 && statePtr->zero_column > 0){
+			move_left(statePtr);
+		}
+
+		//Move right if possible and random move is 1
+		if(random_move == 1 && statePtr->zero_column < N-1){
+			move_right(statePtr);
+		}
+
+		//Move down if possible and random move is 2
+		if(random_move == 2 && statePtr->zero_row < N-1){
+			move_down(statePtr);
+		}
+
+		//Move up if possible and random move is 3
+		if(random_move == 3 && statePtr->zero_row > 0){
+			move_up(statePtr);
+		}
+
+		//Increment i
+		i++;
+	}
+
+	//Print the initial state in puzzle(matrix) format
 	printf("Initial state in puzzle format:\n");
 	print_a_state(statePtr, 0);
 
+	//Print the initial state for actual use in solve.c
 	printf("Initial state in one line, for use in solve.c:\n");
 	print_a_state(statePtr, 1);
 
