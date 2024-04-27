@@ -417,10 +417,8 @@ void generate_successors(struct state* predecessor){
  */
 int states_same(struct state* a, struct state* b){
 	for(int i = 0; i < N; i++){
-		for(int j = 0; j < N; j++){
-			if(a->tiles[i][j] != b->tiles[i][j]){
-				return 0;
-			}
+		if (memcmp(a->tiles[i], b->tiles[i], sizeof(int) * N) != 0){
+			return 0;
 		}
 	}
 
