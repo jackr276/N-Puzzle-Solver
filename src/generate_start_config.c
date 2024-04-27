@@ -11,14 +11,13 @@
 //For random move generation
 #include <time.h>
 
-//The gem puzzle is 4 rows * 4 columns = 16 tiles in total
-#define N 4
-
+//Gem puzzle is 4 rows by 4 columns by default, but this will be changed by user input
+int N = 4; 
 
 //Define a simplified state struct for the generation process. We only need the tiles and zero_row and column
 struct simplified_state{
 	//Define the tiles as an N by N array
-	int tiles[N][N];
+	int** tiles;
 	short zero_row, zero_column;
 };
 
@@ -64,26 +63,32 @@ void print_a_state(struct simplified_state *pstate, int format) {
 	printf("\n");
 }
 
-int main(int argc,char** argv) {
+int main(int argc, char** argv) {
 	//If there aren't enough program arguments, print an error and exit
-	if(argc != 2){
+	if(argc != 3){
 		printf("\nIncorrect number of program arguments.\n");
-		printf("Usage: ./generate_start_config <n>\nWhere <n> is initial complexity.\n\n");
+		printf("Usage: ./generate_start_config <r> <n>\nWhere <r> is number of rows/columns and <n> is initial complexity.\n\n");
 		exit(1);
 	}
 
 	//Once we know there are the right amount of arguments, attempt to scan the number of moves into numMoves
 	int num_moves;
 	//If scanning into a decimnal doesn't work, we know something went wrong
-	if(sscanf(argv[1], "%d", &num_moves) != 1){
+	if(sscanf(argv[1], "%d", &N) != 1 || sscanf(argv[2], "%d", &num_moves) != 1){
 		//Print an error and exit
 		printf("\nIncorrect type of program arguments.\n");
-		printf("Usage: ./generate_start_config <n>\nWhere <n> is a positive integer.\n\n");
+		printf("Usage: ./generate_start_config <n>\nWhere <r> is number of rows/columns <n> is a positive integer.\n\n");
 		exit(1);
 	}
 
 	//Create the simplified state that we will use for generation
 	struct simplified_state* statePtr = (struct simplified_state*)malloc(sizeof(struct simplified_state));
+	//Allocate the space for each of the rows
+	statePtr->tiles = malloc(sizeof(int*)*N);
+	//Allocate the space for each row
+	for(int i = 0; i < N; i++){
+		statePtr->tiles[i] = malloc(N*sizeof(int));
+	}
 
 	int row, col;
 	//Now generate the goal state. Once we create the goal state, we will "mess it up" according to the input number

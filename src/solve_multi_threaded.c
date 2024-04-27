@@ -15,16 +15,14 @@
 //For multi-threading functionality
 #include <pthread.h>
 
-//Grid is 4 by 4, 16 tiles total
-#define N 4
-
+int N = 4;
 
 /**
  * Defines a type of state, which is a structure, that represents a configuration in the gem puzzle game
  */
 struct state{
 	//There are 4x4 = 16 tiles in the game
-	int tiles[N][N];
+	int** tiles;
 	//For A*, define the total_cost, how far the tile has traveled, and heuristic cost
 	int total_cost, current_travel, heuristic_cost;
 	//location (row and colum) of blank tile 0
@@ -47,6 +45,21 @@ struct thread_params{
 	int option;	
 };
 
+void initialize_state(struct state* statePtr){
+	statePtr->tiles = malloc(sizeof(int*) * N);
+
+	for(int i = 0; i < N; i++){
+		statePtr->tiles[i] = malloc(sizeof(int) * N);
+	}
+}
+
+void destroy_state(struct state* statePtr){
+	for(int i = 0; i < N; i++){
+		free(statePtr->tiles[i]);
+	}
+
+	free(statePtr->tiles);
+}
 
 /* The following global variables are defined for convenience */
 struct state* start_state;
@@ -84,6 +97,7 @@ void print_state(struct state* statePtr){
 void initialize_start_goal(char** argv){
 	/* Begin by creating the start state */
 	start_state=(struct state*)malloc(sizeof(struct state));
+	initialize_state(start_state);
 
 	//Start at 1, argv[0] is program name
 	int index = 1;
@@ -119,7 +133,8 @@ void initialize_start_goal(char** argv){
 
 	/* Now we create the goal state */	
 	goal_state=(struct state*)malloc(sizeof(struct state));
-	
+	initialize_state(goal_state);	
+
 	int row, col;
 	//To create the goal state, place the numbers 1-15 in the appropriate locations
 	for(int num = 1; num < N*N; num++){
@@ -315,13 +330,16 @@ void move_left(struct state* statePtr){
  * A simple helper function that will tell if two states are the same. To be used for filtering
  */
 int states_same(struct state* a, struct state* b){
-	//Utilize memcmp function on the tiles for convenience
-	if (memcmp(a->tiles, b->tiles, sizeof(int) * N*N) == 0){
-		//Return 1 if they are the same, 1 corresponds to true
-		return 1;	
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			if(a->tiles[i][j] != b->tiles[i][j]){
+				return 0;
+			}
+		}
 	}
-	//Return 0 if different	
-	return 0;
+
+	//Return 1 if same	
+	return 1;
 }
 
 
@@ -342,6 +360,7 @@ void check_repeating(int i, struct state* stateLinkedList){
 		//If the states match, we free the pointer and exit the loop
 		if(states_same(succ_states[i], cursor)){
 			//Free the duplicate state
+			destroy_state(succ_states[i]);
 			free(succ_states[i]);
 			//Set the pointer to be null as a warning
 			succ_states[i] = NULL;
@@ -395,6 +414,7 @@ void* generator_worker(void* thread_params){
 	if(option == 0 && parameters->predecessor->zero_column > 0){
 		//Create the new state
 		moved = (struct state*)malloc(sizeof(struct state));
+		initialize_state(moved);
 		//Perform a deep copy from predecessor to successor
 		copyState(parameters->predecessor, moved);
 		//Use helper function to move left
@@ -404,6 +424,7 @@ void* generator_worker(void* thread_params){
 	} else if(option == 1 && parameters->predecessor->zero_column < N-1){
 		//Create the new state
 		moved = (struct state*)malloc(sizeof(struct state));
+		initialize_state(moved);
 		//Perform a deep copy from predecessor to successor
 		copyState(parameters->predecessor, moved);
 		//Use helper function to move right 
@@ -413,6 +434,7 @@ void* generator_worker(void* thread_params){
 	} else if(option == 2 && parameters->predecessor->zero_row < N-1){
 		//Create the new state
 		moved = (struct state*)malloc(sizeof(struct state));
+		initialize_state(moved);
 		//Perform a deep copy from predecessor to successor
 		copyState(parameters->predecessor, moved);
 		//Use helper function to move down	
@@ -422,6 +444,7 @@ void* generator_worker(void* thread_params){
 	} else if(option == 3 && parameters->predecessor->zero_row > 0){
 		//Create the new state
 		moved = (struct state*)malloc(sizeof(struct state));
+		initialize_state(moved);
 		//Perform a deep copy from predecessor to successor
 		copyState(parameters->predecessor, moved);
 		//Use helper function to move up	
@@ -579,8 +602,15 @@ int solve(){
  * line arguments
  */
 int main(int argc, char** argv){
+	if(sscanf(argv[1], "%d", &N) != 1){
+		printf("Program arguments must be positive integers\n");
+	}
+
+	//Move the address up to exlude the N number
+	argv += 1;
+
 	//Check if the number of arguments is correct. If not, exit the program and print an error
-	if(argc != 17){
+	if(argc != N*N + 2){
 		//Give an error message
 		printf("Incorrect number of program arguments. Please retry with a correct configuration.\n");
 		return 1;
