@@ -1,4 +1,4 @@
-# 15 Puzzle Solver
+# N Puzzle Solver
  
 ## Configs solved in reasonable amount of time
  9  3  5  4   1  6  8  7   2 13 15 10  11 12 14  0   
