@@ -1,8 +1,8 @@
-# N Puzzle Solver
+# $N$ Puzzle Solver
 Author: [Jack Robbins](https://www.github.com/jackr276)
 
 ## Introduction
-The N-Puzzle problem is on the surface a simple problem to solve. The problem is as follows:
+The $N$ Puzzle problem is on the surface a simple problem to solve. The problem is as follows:
 > Given an initial configuration of an $N\times N$ grid of tiles, each labeled with distinct numbers from $0$ to $N\times N - 1$, determine the *smallest* sequence of single step moves that can be made with the $0$ tile such that the puzzle is in numerical *row-major* order, with the 0 slider in the $N-1$ row and $N-1$ column.
 
 The definition can be a bit hard to parse without an example, so let's look at an example starting configuration and goal configuration.
