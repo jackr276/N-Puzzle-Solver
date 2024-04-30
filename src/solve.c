@@ -569,7 +569,7 @@ int solve(){
 
 		//For very complex problems, print the iteration count to the console for a sanity check
 		if(iter > 1 && iter % 1000 == 0) {
-			printf("Still calculating, on %dth iteration\n", iter);
+			printf("Iteration: %6d, %6ld total unique states generated\n", iter, num_unique_configs);
 		}
 		
 		//End of one full iteration
