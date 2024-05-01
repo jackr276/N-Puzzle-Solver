@@ -101,7 +101,7 @@ void initialize_start_goal(char** argv){
 	/* Begin by creating the start state */
 
 	//Create the start state itself
-	start_state=(struct state*)malloc(sizeof(struct state));
+	start_state = (struct state*)malloc(sizeof(struct state));
 	//Dynamically allocate memory needed in the start_state
 	initialize_state(start_state);
 
@@ -114,10 +114,10 @@ void initialize_start_goal(char** argv){
 		for (int j = 0; j < N; j++){
 			//Grab the specific tile number from the arguments and place it into the start state
 			tile=atoi(argv[index++]);
-			start_state->tiles[i][j]=tile;
+			start_state->tiles[i][j] = tile;
 
 			//If we found the zero tile, update the zero row and column
-			if(tile==0){
+			if(tile == 0){
 				start_state->zero_row = i;
 				start_state->zero_column = j;
 			}
@@ -125,12 +125,12 @@ void initialize_start_goal(char** argv){
 	}
 
 	//Initialize everything else in the start state
-	start_state->total_cost=0;
-	start_state->current_travel=0;
-	start_state->heuristic_cost=0;
-	start_state->next=NULL;
+	start_state->total_cost = 0;
+	start_state->current_travel = 0;
+	start_state->heuristic_cost = 0;
+	start_state->next = NULL;
 	//Important -- must have no predecessor(root of search tree)
-	start_state->predecessor=NULL;
+	start_state->predecessor = NULL;
 
 	//Print to the console for the user
 	printf("\nInitial state\n");
@@ -140,7 +140,7 @@ void initialize_start_goal(char** argv){
 	/* Now we create the goal state */	
 	
 	//Create the goal state itself
-	goal_state=(struct state*)malloc(sizeof(struct state));
+	goal_state = (struct state*)malloc(sizeof(struct state));
 	//Dynamically allocate the memory needed in the goal_state
 	initialize_state(goal_state);	
 
@@ -154,12 +154,12 @@ void initialize_start_goal(char** argv){
 	}
 
 	//0 is always at the last spot in the goal state
-	goal_state->tiles[N-1][N-1]=0;
+	goal_state->tiles[N-1][N-1] = 0;
 
 	//Initialize everything else in the goal state
-	goal_state->total_cost=0;
-	goal_state->current_travel=0;
-	goal_state->heuristic_cost=0;
+	goal_state->total_cost = 0;
+	goal_state->current_travel = 0;
+	goal_state->heuristic_cost = 0;
 	goal_state->next=NULL;
 
 	//Print to the console for the user
