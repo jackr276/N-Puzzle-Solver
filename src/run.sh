@@ -16,11 +16,22 @@ gcc -Wall -Wextra -pthread solve_multi_threaded.c -o solve_multi_threaded
 
 #Get the puzzle size from user
 read -p "Enter a positive integer for the NxN puzzle size: " SIZE
+
+#Faulty input tolerance -- stop user until positive integer is inputted
+while [[ $SIZE -lt 1 ]]; do
+	read -p "Enter a positive integer for the NxN puzzle size: " SIZE
+done
+
 #Get the complexity of the puzzle from the user
 read -p "Enter a positive integer for complexity of initial configuration: " COMPLEXITY
+
+#Faulty input tolerance -- stop user until positive integer is inputted
+while [[ $COMPLEXITY -lt 0 ]]; do 
+	read -p "Enter a positive integer for complexity of initial configuration: " COMPLEXITY
+done
+
 #Get the multithreaded option from user
 read -p "Do you want to use multithreading[Y/n]: " MULTITHREADED
-
 
 #Grab the input(last line of gen output)
 input=$(./generate_start_config $SIZE $COMPLEXITY | tail -n 1)
