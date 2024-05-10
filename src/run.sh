@@ -1,5 +1,6 @@
 #Author: Jack Robbins
 #A simple runner script for the puzzle solver
+#Fault toreance for inputs has been added -- should be adequately user proof
 
 #!/bin/bash
 
