@@ -13,6 +13,7 @@ fi
 #Compile with aggressive warnings
 gcc -Wall -Wextra generate_start_config.c -o generate_start_config 
 gcc -Wall -Wextra solve.c -o solve
+#IMPORTANT - must link pthread library when compiling
 gcc -Wall -Wextra -pthread solve_multi_threaded.c -o solve_multi_threaded
 
 #Get the puzzle size from user
