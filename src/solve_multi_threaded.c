@@ -99,7 +99,14 @@ void print_state(struct state* statePtr){
 	//Go through tile by tile and print out
 	for (int i=0; i<N; i++) {
 		for (int j=0; j<N; j++){ 
-			printf("%2d ", statePtr->tiles[i][j]);
+			//Support printing of states with 2 or 3 digit max integers
+			if(N < 11){
+				//With numbers less than 11, N^2 is at most 99, so only 2 digits needed
+				printf("%2d ", statePtr->tiles[i][j]);
+			} else {
+				//Ensures printing of large states will not be botched
+				printf("%3d ", statePtr->tiles[i][j]);
+			}
 		}
 		//Print a newline to represent the row change
 		printf("\n");
