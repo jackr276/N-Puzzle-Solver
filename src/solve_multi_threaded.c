@@ -605,7 +605,7 @@ int solve(){
 			//Print out total memory consumption in Megabytes
 			printf("Memory consumed: %.2f MB\n", (sizeof(struct state) + N*N*sizeof(int)) * num_unique_configs / 1048576.0);
 			//Print out CPU time(NOT wall time) spent
-			printf("Total CPU time spent: %.7f\n\n", time_spent_CPU);	
+			printf("Total CPU time spent: %.7f seconds\n\n", time_spent_CPU);	
 			printf("------------------------------------------------------\n\n");
 
 			//We've found a solution, so the function should exit 
