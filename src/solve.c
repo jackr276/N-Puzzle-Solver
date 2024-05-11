@@ -276,6 +276,12 @@ void update_prediction_function(int i){
 	}
 	//Once we have the heuristic_cost, update the total_cost
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
+
+
+
+	/* Add in linear conflict heuristic to improve prediction time */
+
+
 }
 
 
