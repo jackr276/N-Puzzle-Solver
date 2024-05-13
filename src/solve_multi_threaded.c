@@ -653,14 +653,18 @@ int solve(){
 int main(int argc, char** argv){
 	//If the user put in a non-integer or a nonpositive integer, print an error
 	if(sscanf(argv[1], "%d", &N) != 1 || N < 1){
-		printf("Program arguments must be positive integers\n");
+		printf("Incorrect type of program arguments.\n");
+		printf("Usage: ./solve_multi_threaded <N> <n0. . .nN>\n");
+		printf("Where <N> is the number of rows/columns, followed by the matrix in row-major order.\n\n");
 		return 1;
 	}
 
 	//Check if the number of arguments is correct. If not, exit the program and print an error
 	if(argc != N*N + 2){
 		//Give an error message
-		printf("Incorrect number of program arguments. Please retry with a correct configuration.\n");
+		printf("Incorrect number of program arguments.\n");
+		printf("Usage: ./solve_multi_threaded <N> <n0. . .nN>\n");
+		printf("Where <N> is the number of rows/columns, followed by the matrix in row-major order.\n\n");
 		return 1;
 	}
 
