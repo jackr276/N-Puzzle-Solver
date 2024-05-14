@@ -23,7 +23,10 @@ The goal configuration for all $N \times N$ puzzles is the same for each startin
 |**13**|**14**|**15**|**0**|
 
 The goal configuration is mathematically generated for each $N$ config size
- 
+
+
+## Proof that the $N$ Puzzle is NP-Hard
+
 ## Configs solved in reasonable amount of time
  9  3  5  4   1  6  8  7   2 13 15 10  11 12 14  0   
  
