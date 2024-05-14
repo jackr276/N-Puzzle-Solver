@@ -7,6 +7,8 @@ The $N$ Puzzle problem is on the surface a simple problem to solve. The problem 
 
 The definition can be a bit hard to parse without an example, so let's look at an example starting configuration and goal configuration.
 
+## Proof that the $N$ Puzzle is NP-Hard
+
 #### Example $4 \times 4$ starting configuration
 | 1 | 7 | 15 | 4 |
 |--|---|---|--|
