@@ -276,7 +276,10 @@ void update_prediction_function(int i){
 
 	//Declare all needed variables
 	int selected_num, goal_rowCor, goal_colCor;	
-	
+	//Keep track of the number of linear conflicts and manhattan distance
+	//int linear_conflict;
+	int manhattan_distance;
+
 	//Go through each tile in the state and calculate the heuristic_cost
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N; j++){
@@ -295,7 +298,10 @@ void update_prediction_function(int i){
 			}
 		
 			//Manhattan distance is the absolute value of the x distance and the y distance
-			statePtr->heuristic_cost += abs(i - goal_rowCor) + abs(j - goal_colCor);
+			manhattan_distance = abs(i - goal_rowCor) + abs(j - goal_colCor);
+
+			//Add in manhattan_distance
+			statePtr->heuristic_cost += manhattan_distance;
 		}
 	}
 	//Once we have the heuristic_cost, update the total_cost
