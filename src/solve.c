@@ -258,7 +258,10 @@ void update_prediction_function(int i){
 	*/
 
 	//Declare all needed variables
-	int selected_num, goal_rowCor, goal_colCor;	
+	int selected_num, goal_rowCor, goal_colCor;
+	//Keep track of the number of linear conflicts and manhattan distance
+	//int linear_conflicts;
+	int manhattan_distance;
 	
 	//Go through each tile in the state and calculate the heuristic_cost
 	for(int i = 0; i < N; i++){
@@ -276,19 +279,23 @@ void update_prediction_function(int i){
 				//Goal column coordinate is the index modulated by column length 
 				goal_colCor = (selected_num - 1) % N;
 			}
-		
+
 			//Manhattan distance is the absolute value of the x distance and the y distance
-			statePtr->heuristic_cost += abs(i - goal_rowCor) + abs(j - goal_colCor);
+			manhattan_distance = abs(i - goal_rowCor) + abs(j - goal_colCor);	
+		
+			//Add manhattan distance for each tile
+			statePtr->heuristic_cost += manhattan_distance;
 		}
 	}
+	
+	/**
+	 * Now we must calculate the linear conflict heuristic. This heuristic takes two tiles in their goal row
+	 * or goal column and accounts for the fact that for each tile to be moved around, it actually takes
+	 * at least 2 additional moves 
+	 */
+
 	//Once we have the heuristic_cost, update the total_cost
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
-
-
-
-	/* Add in linear conflict heuristic to improve prediction time */
-
-
 }
 
 
