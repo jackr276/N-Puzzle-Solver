@@ -276,8 +276,7 @@ void update_prediction_function(int i){
 
 	//Declare all needed variables
 	int selected_num, goal_rowCor, goal_colCor;	
-	//Keep track of the number of linear conflicts and manhattan distance
-	//int linear_conflict;
+	//Keep track of the manhattan distance
 	int manhattan_distance;
 
 	//Go through each tile in the state and calculate the heuristic_cost
@@ -300,10 +299,85 @@ void update_prediction_function(int i){
 			//Manhattan distance is the absolute value of the x distance and the y distance
 			manhattan_distance = abs(i - goal_rowCor) + abs(j - goal_colCor);
 
-			//Add in manhattan_distance
+			//Add in manhattan_distance for each tile
 			statePtr->heuristic_cost += manhattan_distance;
 		}
 	}
+ 	
+	/**
+	 * Now we must calculate the linear conflict heuristic. This heuristic takes two tiles in their goal row
+	 * or goal column and accounts for the fact that for each tile to be moved around, it actually takes
+	 * at least 2 additional moves. Given two tiles in their goal row, 2 additional vertical moves are added
+	 * to manhattan distance
+	 */
+
+	//We initially have no linear conflicts
+	int linear_conflicts = 0;
+	//Declare for convenience
+	int left, right, above, below;
+	//Also declare goal row coordinates for convenience
+	int goal_rowCor_left, goal_rowCor_right, goal_colCor_above, goal_colCor_below;
+
+	//Check each row for linear conflicts
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N-1; j++){
+			//Grab the left and right tiles for convenience
+			left = statePtr->tiles[i][j];
+			right = statePtr->tiles[i][j+1];
+
+			//We don't care about the 0 tile, skip if we find it
+			if(left == 0 || right == 0){
+				continue;
+			}
+
+			//Check if both tiles are in their goal row
+			goal_rowCor_left = (left - 1) / N;
+			goal_rowCor_right = (right - 1) / N;
+
+			//If these tiles are not BOTH their goal row, linear conflict does not apply
+			if(goal_rowCor_left != goal_rowCor_right || goal_rowCor_right != i){
+				continue;
+			}
+			
+			//If the tiles are 1 apart(MD would be 1) AND they're swapped, we have a linear conflict
+			if(abs(left - right) == 1 && left > right){
+				linear_conflicts++;
+			}
+		}
+	}
+
+	//Now check each column for linear conflicts 
+	for(int i = 0; i < N-1; i++){
+		for(int j = 0; j < N; j++){
+			//Grab the above and below tiles for convenience
+			above = statePtr->tiles[i][j];
+			below = statePtr->tiles[i+1][j];
+
+			//We don't care about the 0 tile, skip if we find it
+			if(above == 0 || below == 0){
+				continue;
+			}
+
+			//Check if both tiles are in their goal column
+			goal_colCor_above = (above - 1) % N;
+			goal_colCor_below = (below - 1) % N;
+
+			//If these tiles are not BOTH in their goal column, linear conflict does not apply
+			if(goal_colCor_below != goal_colCor_above || goal_rowCor_right != j){
+				continue;
+			}
+
+			//If the tiles are 1 apart(MD would be 1) AND they're swapped, we have a linear conflict
+			if(abs(above - below) == 1 && above > below){
+				linear_conflicts++;
+			}
+		}
+	}
+
+	//Once we have calculated the number of linear conflicts, we add it into the heuristic cost
+	//For each linear conflict, a minimum of 2 additional moves are required to swap tiles, so add 2 to the heuristic_cost
+	statePtr->heuristic_cost += linear_conflicts * 2;
+
 	//Once we have the heuristic_cost, update the total_cost
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
 }
