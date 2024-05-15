@@ -340,7 +340,7 @@ void update_prediction_function(int i){
 			}
 			
 			//If the tiles are 1 apart(MD would be 1) AND they're swapped, we have a linear conflict
-			if(abs(left - right) == 1 && left > right){
+			if(left - right == 1){
 				linear_conflicts++;
 			}
 		}
@@ -363,12 +363,13 @@ void update_prediction_function(int i){
 			goal_colCor_below = (below - 1) % N;
 
 			//If these tiles are not BOTH in their goal column, linear conflict does not apply
-			if(goal_colCor_below != goal_colCor_above || goal_rowCor_right != j){
+			if(goal_colCor_below != goal_colCor_above || goal_colCor_above != j){
 				continue;
 			}
 
-			//If the tiles are 1 apart(MD would be 1) AND they're swapped, we have a linear conflict
-			if(abs(above - below) == 1 && above > below){
+			//IMPORTANT - tiles int the same column should be N apart, not 1 like in a row
+			//If the tiles are N apart(MD would be N) AND they're swapped, we have a linear conflict
+			if(above - below == N){
 				linear_conflicts++;
 			}
 		}
