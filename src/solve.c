@@ -267,10 +267,10 @@ void update_prediction_function(int i){
 		for(int j = 0; j < N; j++){
 			//grab the number to be examined
 			selected_num = statePtr->tiles[i][j];
-	
-			//0 is a special case, should be in the very last cell
+
+			//We do not care about 0 as it can move, so skip it
 			if(selected_num == 0){
-				goal_rowCor = goal_colCor = N-1;
+				continue;
 			//Otherwise mathematically find the needed position
 			} else {
 				//Goal row coordinate is the index of the number divided by number of rows
