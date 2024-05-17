@@ -3,7 +3,7 @@ Author: [Jack Robbins](https://www.github.com/jackr276)
 
 ## Introduction
 The $N$ Puzzle problem is on the surface a simple problem to solve. The problem is as follows:
-> Given an initial configuration of an $N\times N$ grid of tiles, each labeled with distinct numbers from $0$ to $N\times N - 1$, determine the *smallest* sequence of single step moves that can be made with the $0$ tile such that the puzzle is in numerical *row-major* order, with the 0 slider in the $N-1$ row and $N-1$ column.
+> Given an initial configuration of an $N\times N$ grid of tiles, each labeled with distinct numbers from $0$ to $N^2 - 1$, determine the *smallest* sequence of single step moves that can be made with the $0$ tile such that the puzzle is in numerical *row-major* order, with the 0 slider in the $N-1$ row and $N-1$ column.
 
 The definition can be a bit hard to parse without an example, so let's look at an example starting configuration and goal configuration.
 
@@ -22,7 +22,10 @@ The goal configuration for all $N \times N$ puzzles is the same for each startin
 |**9**|**10**|**11**|**12**|
 |**13**|**14**|**15**|**0**|
 
-The goal configuration is mathematically generated for each $N$ config size
+While this puzzle may look easy to the uninitiated, writing a program that finds the solution in a reasonable amount of time is quite the challenge. This project contains several programs, written in C, that use an A* heuristic algorithm to solve the N-Puzzle. Additionally, contained in this README.md is a full writeup on the theoretical basis and ideas implemented in the program.
+
+## Exploring the $N$ Puzzle Problem More
+
 
 
 ## Proof that the $N$ Puzzle is NP-Hard
