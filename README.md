@@ -25,7 +25,12 @@ The goal configuration for all $N \times N$ puzzles is the same for each startin
 While this puzzle may look easy to the uninitiated, writing a program that finds the solution in a reasonable amount of time is quite the challenge. This project contains several programs, written in C, that use an A* heuristic algorithm to solve the N-Puzzle. Additionally, contained in this README.md is a full writeup on the theoretical basis and ideas implemented in the program.
 
 ## Exploring the $N$ Puzzle Problem More
-
+Before writing programs and attempting to solve the $N$ puzzle, we should first ask if this problem is even solveable at all. To do this, we will use a very simple proof to show that the $N$ puzzle is **decidable**. As a reminder, here is what it means for a problem to be **decidable**:
+> A problem(or more specifically, the language made from that problem) is **decidable** if $\exists$ some Turing Machine $M$ that, on input $w \in \Omega$ where $\Omega$ is the universe of all possible problem instances:   
+>      1. Always halts and accpets if $w \in A$, where $A$ is the set of all "yes instances"   
+>      2. Always halts and rejects if $w \notin A$
+>         
+> Importantly, $M$ must **never** get stuck in an infinite loop.       
 
 
 ## Proof that the $N$ Puzzle is NP-Hard
