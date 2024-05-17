@@ -25,35 +25,7 @@ The goal configuration for all $N \times N$ puzzles is the same for each startin
 While this puzzle may look easy to the uninitiated, writing a program that finds the solution in a reasonable amount of time is quite the challenge. This project contains several programs, written in C, that use an A* heuristic algorithm to solve the N-Puzzle. Additionally, contained in this README.md is a full writeup on the theoretical basis and ideas implemented in the program.
 
 ## Exploring the $N$ Puzzle Problem More
-Before writing programs and attempting to solve the $N$ puzzle, we should first ask if this problem is even solveable at all. To do this, we will use a very simple proof to show that the $N$ puzzle is **decidable**. As a reminder, here is what it means for a problem to be **decidable**:
-> A problem(or more specifically, the language made from that problem) is **decidable** if $\exists$ some Turing Machine $M$ that, on input $w \in \Omega$ where $\Omega$ is the universe of all possible problem instances:   
->      1. Always halts and accpets if $w \in A$, where $A$ is the set of all "yes instances"   
->      2. Always halts and rejects if $w \notin A$
->         
-> Importantly, $M$ must **never** get stuck in an infinite loop.       
-
-With this in mind, let's prove that the $N$ Puzzle Problem is decidable:
-
-**Begin Proof**     
-Let $w \in \Omega$ be a problem instance of the N puzzle. Additionally let $\langle w \rangle$ be the string encoding of this problem instance that contains the value for $N$ and the starting configuration afterwards in row-major order.
-Now define decider $D$ that operates as follows:     
-$D$ = "On input $\langle w \rangle$:   
-$\quad$ 0. Read through $\langle w \rangle$ to ensure it is a valid problem instance. If not, reject.   
-$\quad$ 1. Mathematically generate goal configuration for value of $N$ given, store on tape. Also store the starting configuration given in $\langle w \rangle$.      
-$\quad$ 2. Generate all possible successor configurations from the starting configuration. For each one of these configurations, put it     
-$\quad$    on the tape one after another. Additionally, store the position of the start of its predecessor at the end of the configuration.     
-$\quad$ 3. Repeat this process. Each time, before generating more configurations, first check if the configuration being expanded is the    
-$\quad$   goal, if it is, trace back the solution path using the predecessors and halt and accept. Additionally, on generating each           
-$\quad$   configuration, first check if it is repeating by scanning over the entire tape and checking it against other configurations        
-$\quad$   that have already been made. If it is a repeat, erase it from the tape.    
-$\quad$ 4. If eventually, no more non-repeating configurations can be generated and the solution isn't found, halt and reject."   
-
-Since there is always a finite(although very large) number of possible successor states for each $N$ puzzle problem instance, $D$ will always eventually either halt and accept or halt and reject, making it a decider. Therefore, since $\exists$ a TM $D$ that decides this problem, it is *decidable*.   
-**End Proof**
-  
-
-
-## Proof that the $N$ Puzzle is NP-Hard
+The $N$ Puzzle problem is in the class of NP-Hard. A full proof will not be given here, but those interested can click [here](https://dspace.mit.edu/bitstream/handle/1721.1/134978/1707.03146.pdf?sequence=2) for a 2017 proof using rectilinear steiner trees to prove that the $N$ puzzle problem is NP-Hard.
 
 ## Configs solved in reasonable amount of time
  9  3  5  4   1  6  8  7   2 13 15 10  11 12 14  0   
