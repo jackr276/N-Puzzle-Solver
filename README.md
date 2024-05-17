@@ -48,7 +48,7 @@ $\quad$   configuration, first check if it is repeating by scanning over the ent
 $\quad$   that have already been made. If it is a repeat, erase it from the tape.    
 $\quad$ 4. If eventually, no more non-repeating configurations can be generated and the solution isn't found, halt and reject."   
 
-Since there is always a finite(although very large) number of possible successor states for each $N$ puzzle problem instance, $D$ will always eventually either halt and accept or halt and reject, making it a decider. Therefore, since $\exists$ a TM $D$ that decides this problem, it is *decidable*.
+Since there is always a finite(although very large) number of possible successor states for each $N$ puzzle problem instance, $D$ will always eventually either halt and accept or halt and reject, making it a decider. Therefore, since $\exists$ a TM $D$ that decides this problem, it is *decidable*.   
 **End Proof**
   
 
