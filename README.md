@@ -39,7 +39,7 @@ Let $w \in \Omega$ be a problem instance of the N puzzle. Additionally let $\lan
 Now define decider $D$ that operates as follows:     
 $D$ = "On input $\langle w \rangle$:   
 $\quad$ 0. Read through $\langle w \rangle$ to ensure it is a valid problem instance. If not, reject.   
-$\quad$ 1. Mathematically generate goal configuration for value of $N$ given, store on tape. Also store the starting configuration given in $\langle w \rangle$.
+$\quad$ 1. Mathematically generate goal configuration for value of $N$ given, store on tape. Also store the starting configuration given in $\langle w \rangle$.      
 $\quad$ 2. Generate all possible successor configurations from the starting configuration. For each one of these configurations, put it     
 $\quad$    on the tape one after another. Additionally, store the position of the start of its predecessor at the end of the configuration.     
 $\quad$ 3. Repeat this process. Each time, before generating more configurations, first check if the configuration being expanded is the    
