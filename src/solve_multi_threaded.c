@@ -340,7 +340,7 @@ void update_prediction_function(int i){
 			}
 			
 			//If the tiles are 1 apart(MD would be 1) AND they're swapped, we have a linear conflict
-			if(left - right == 1){
+			if(left > right){
 				linear_conflicts++;
 			}
 		}
@@ -369,7 +369,7 @@ void update_prediction_function(int i){
 
 			//IMPORTANT - tiles int the same column should be N apart, not 1 like in a row
 			//If the tiles are N apart(MD would be N) AND they're swapped, we have a linear conflict
-			if(above - below == N){
+			if(above > below){
 				linear_conflicts++;
 			}
 		}
