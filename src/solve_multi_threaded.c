@@ -415,11 +415,7 @@ void update_prediction_function(int i){
 	//Now calculate column inversions. For this, we must read the tiles top-to-bottom, then left to right
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N; j++){
-			tile = statePtr->tiles[i][j] - 1;
-			if(tile == -1){
-				continue;
-			}
-
+			tile = statePtr->tiles[i][j];
 			index = 0;
 			for(int k = 0; k < N*N; k++){
 				if(column_major[k] == tile){
@@ -427,8 +423,7 @@ void update_prediction_function(int i){
 					break;
 				}
 			}
-
-			inversions += abs(index - (j*N + i));
+			inversions += abs(index -(j*N+i));
 		}
 	}
 
