@@ -298,9 +298,6 @@ void update_prediction_function(int i){
 		
 			//Manhattan distance is the absolute value of the x distance and the y distance
 			manhattan_distance = abs(i - goal_rowCor) + abs(j - goal_colCor);
-
-			//Add in manhattan_distance for each tile
-			statePtr->heuristic_cost += manhattan_distance;
 		}
 	}
  	
@@ -310,7 +307,7 @@ void update_prediction_function(int i){
 	 * at least 2 additional moves. Given two tiles in their goal row, 2 additional vertical moves are added
 	 * to manhattan distance
 	 */
-
+/*
 	//We initially have no linear conflicts
 	int linear_conflicts = 0;
 	//Declare for convenience
@@ -378,6 +375,73 @@ void update_prediction_function(int i){
 	//Once we have calculated the number of linear conflicts, we add it into the heuristic cost
 	//For each linear conflict, a minimum of 2 additional moves are required to swap tiles, so add 2 to the heuristic_cost
 	statePtr->heuristic_cost += linear_conflicts * 2;
+*/
+
+	int inversions = 0;
+	int tile, compareTo, vertical_inversions, horizontal_inversions;	
+
+	//Calculate inversions for the row
+	for(int i = 0; i < N*N; i++){
+		//Grab the tile, treating everything as a row
+		tile = *((int*)(statePtr->tiles)+i);
+		//We don't care about 0
+		if(tile == 0){
+			continue;
+		}
+
+		for(int j = 0; j < i; j++){
+			compareTo = *((int*)(statePtr->tiles)+j);
+			//If the tile to the left is more than the tile to the right, we have an inversion
+			if(compareTo != 0 && compareTo > tile){
+				inversions++;
+			}
+		}
+	}
+	//Each inversion leads to at most an extra N-1 moves 
+	vertical_inversions = inversions / (N-1) + inversions % (N-1);
+
+	//Reset inversions
+	inversions = 0;
+
+	int column_major[N*N];
+	int index = 0;
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			column_major[index] = j * N + i;
+			index++;
+		}
+	}
+
+	//Now calculate column inversions. For this, we must read the tiles top-to-bottom, then left to right
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			tile = statePtr->tiles[i][j];
+			if(tile == 0){
+				continue;
+			}
+
+			index = 0;
+			for(int k = 0; k < N*N; k++){
+				if(column_major[k] == tile){
+					index = k;
+					break;
+				}
+			}
+
+			inversions += abs(index - (j*N + i));
+		}
+	}
+
+
+	horizontal_inversions = inversions / (N-1) + inversions % (N-1);
+	
+	int inversion_distance = vertical_inversions + horizontal_inversions;
+
+	if(inversion_distance > manhattan_distance){
+		statePtr->heuristic_cost = inversion_distance;
+	} else {
+		statePtr->heuristic_cost = manhattan_distance;
+	}
 
 	//Once we have the heuristic_cost, update the total_cost
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
