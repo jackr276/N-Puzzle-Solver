@@ -308,7 +308,7 @@ void update_prediction_function(int i){
 	 * Now we must calculate the linear conflict heuristic. This heuristic takes two tiles in their goal row
 	 * or goal column and accounts for the fact that for each tile to be moved around, it actually takes
 	 * at least 2 additional moves. Given two tiles in their goal row, 2 additional vertical moves are added
-	 * to manhattan distance
+	 * to manhattan distance for each row/column that they have to move
 	 */
 
 	//We initially have no linear conflicts
@@ -321,63 +321,85 @@ void update_prediction_function(int i){
 	//Check each row for linear conflicts
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N-1; j++){
-			//Grab the left and right tiles for convenience
+			//Grab the leftmost tile that we'll be comparing to
 			left = statePtr->tiles[i][j];
-			right = statePtr->tiles[i][j+1];
 
-			//We don't care about the 0 tile, skip if we find it
-			if(left == 0 || right == 0){
-				continue;
-			}
-
-			//Check if both tiles are in their goal row
-			goal_rowCor_left = (left - 1) / N;
-			goal_rowCor_right = (right - 1) / N;
-
-			//If these tiles are not BOTH their goal row, linear conflict does not apply
-			if(goal_rowCor_left != goal_rowCor_right || goal_rowCor_right != i){
+			//If this tile is 0, it's irrelevant so do not explore further
+			if(left == 0){
 				continue;
 			}
 			
-			//If the tiles are 1 apart(MD would be 1) AND they're swapped, we have a linear conflict
-			if(left > right){
-				linear_conflicts++;
-			}
+			//Now go through every tile in the row after left, this is what makes this generalized linear conflict
+			for(int k = j+1; k < N; k++){
+				//Grab right tile for convenience
+				right = statePtr->tiles[i][k];
+
+				//Again, if the tile is 0, no use in wasting cycles with it
+				if(right == 0){
+					continue;
+				}
+
+				//Check if both tiles are in their goal row
+				goal_rowCor_left = (left - 1) / N;
+				goal_rowCor_right = (right - 1) / N;
+
+				//If these tiles are not BOTH their goal row, linear conflict does not apply
+				//This is conterintuitive, but as it turns out makes an enormous difference
+				if(goal_rowCor_left != goal_rowCor_right || goal_rowCor_right != i){
+					continue;
+				}
+			
+				//If the tiles are swapped, we have a linear conflict
+				if(left > right){
+					//To be more informed, we should add 2 moves for EACH time we have to swap
+					linear_conflicts += k-j;
+				}
+			}	
 		}
 	}
 
 	//Now check each column for linear conflicts 
 	for(int i = 0; i < N-1; i++){
 		for(int j = 0; j < N; j++){
-			//Grab the above and below tiles for convenience
+			//Grab the abovemost tile that we'll be comparing to
 			above = statePtr->tiles[i][j];
-			below = statePtr->tiles[i+1][j];
 
-			//We don't care about the 0 tile, skip if we find it
-			if(above == 0 || below == 0){
+			//If this tile is 0, it's irrelevant so do not explore further
+			if(above == 0){
 				continue;
 			}
 
-			//Check if both tiles are in their goal column
-			goal_colCor_above = (above - 1) % N;
-			goal_colCor_below = (below - 1) % N;
+			//Now go through every tile in the column below "above", this is what makes it generalized linear conflict
+			for(int k = i+1; k < N; k++){
+				//Grab the below tile for convenience
+				below = statePtr->tiles[k][j];
 
-			//If these tiles are not BOTH in their goal column, linear conflict does not apply
-			if(goal_colCor_below != goal_colCor_above || goal_colCor_above != j){
-				continue;
-			}
+				//We don't care about the 0 tile, skip if we find it
+				if(below == 0){
+					continue;
+				}
 
-			//IMPORTANT - tiles int the same column should be N apart, not 1 like in a row
-			//If the tiles are N apart(MD would be N) AND they're swapped, we have a linear conflict
-			if(above > below){
-				linear_conflicts++;
+				//Check if both tiles are in their goal column
+				goal_colCor_above = (above - 1) % N;
+				goal_colCor_below = (below - 1) % N;
+
+				//If these tiles are not BOTH in their goal column, linear conflict does not apply
+				//This is counterintutive, but as it turns out makes an enormous difference
+				if(goal_colCor_below != goal_colCor_above || goal_colCor_above != j){
+					continue;
+				}
+
+				//If above is more than below, we have a linear conflict
+				if(above > below){
+					//To be more informed, we should add 2 moves for EACH time we have to swap
+					linear_conflicts += k-i;				
+				}
 			}
 		}
 	}
 
-	//Once we have calculated the number of linear conflicts, we add it into the heuristic cost
-	//For each linear conflict, a minimum of 2 additional moves are required to swap tiles, so add 2 to the heuristic_cost
-	statePtr->heuristic_cost += linear_conflicts * 2;
+	//For each linear confict, at least 2 additional moves are required to fix it
+	statePtr->heuristic_cost += linear_conflicts*2;
 
 	//Once we have the heuristic_cost, update the total_cost
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
@@ -681,6 +703,8 @@ int solve(){
 
 			//Print out all running statistics
 			printf("------------- Program Running Statistics -------------\n\n");
+			//Print out the path length
+			printf("Optimal solution path length: %d\n", pathlen);
 			//Print out the number of unique configurations generated
 			printf("Unique configurations generated by solver: %ld\n", num_unique_configs);
 			//Print out total memory consumption in Megabytes
