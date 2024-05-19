@@ -308,7 +308,9 @@ void update_prediction_function(int i){
 	 * Now we must calculate the linear conflict heuristic. This heuristic takes two tiles in their goal row
 	 * or goal column and accounts for the fact that for each tile to be moved around, it actually takes
 	 * at least 2 additional moves. Given two tiles in their goal row, 2 additional vertical moves are added
-	 * to manhattan distance for each row/column that they have to move
+	 * to manhattan distance for each row/column amount that they have to move
+	 * 
+	 * ENHANCEMENT -> Using k-i and k-j to determine exactly how many swaps are needed
 	 */
 
 	//We initially have no linear conflicts
