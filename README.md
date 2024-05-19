@@ -22,7 +22,9 @@ The goal configuration for all $N \times N$ puzzles is the same for each startin
 |**9**|**10**|**11**|**12**|
 |**13**|**14**|**15**|**0**|
 
-While this puzzle may look easy to the uninitiated, writing a program that finds the solution in a reasonable amount of time is quite the challenge. This project contains several programs, written in C, that use an A* heuristic algorithm to solve the N-Puzzle. Additionally, contained in this README.md is a full writeup on the theoretical basis and ideas implemented in the programs.
+While this puzzle may look easy to the uninitiated, writing a program that finds the solution in a reasonable amount of time is quite the challenge. This particular example is solved optimally in 24 moves of the 0 slider.  
+
+This project contains several programs, written in C, that use an A* heuristic algorithm to solve the N-Puzzle. Additionally, contained in this README.md is a full writeup on the theoretical basis and ideas implemented in the programs.
 
 ## Exploring the $N$ Puzzle Problem With Complexity Theory
 The $N$ Puzzle problem is in the class of NP-Hard. A full proof will not be given here, but those interested can click [here](https://dspace.mit.edu/bitstream/handle/1721.1/134978/1707.03146.pdf?sequence=2) for a very interesting proof using rectilinear Steiner trees to prove that the $N$ puzzle problem is NP-Hard. More important for our purposes here is the result of this classification. Problems in NP can be solved in nondeterminsitic polynomial time, meaning that any solver for the $N$-Puzzle has "branching" possibilies. This is where the NP in NP-Hard comes from. The "hard" part comes from the fact that this problem is, for lack of a better term, extremely hard to solve. Problems classified as NP hard also tend to be hard to verify as well. It is not difficult to see why this is the case for this given problem. For any given $N$-Puzzle, the number of possible states is always $N^2!$, with the number of solveable states being $N^2! \div 2$. It is not difficult to find any given solution, but finding the optimal solution requires considerable amounts of computation.   
@@ -65,4 +67,23 @@ In the algorithm above, we see that there are two data structures: **fringe** an
 ### Prediction Function
 The other important part of this algorithm is the prediction function for each state. This prediction function is the most importnat part of our algorithm. Effectively, this algorithm "guesses" how promising a state is. The lower the value of this prediction function, the more promising the state seems. Good "guesses" allow the algorithm to finish faster, and bad "guesses" will cause the algorithm to explore dead end paths and waste time. The prediction function implemented here focuses on estimating the cost to get from the current state to the goal state.    
 
-The format for our prediction function is as follows: `f(n) = g(n) + h(n)`. `g(n)` is referred to as the "previous travel", and is the simplest to calculate. It is calculated by counting the number of predecessors that a node has. This allows us to factor in the cost to reach a state so far, which is important if we want to find the **shortest** solution path possible. However, the heuristic function `h(n)` is where most of the heavy lifting happens for the algorithm. As the heuristic function, it uses calculations to guess the number of moves required to change the current state into the goal state.
+The format for our prediction function is as follows: `f(n) = g(n) + h(n)`. `g(n)` is referred to as the "previous travel", and is the simplest to calculate. It is calculated by counting the number of predecessors that a node has. This allows us to factor in the cost to reach a state so far, which is important if we want to find the **shortest** solution path possible. 
+
+#### Heuristic Function
+However, the heuristic function `h(n)` is where most of the heavy lifting happens for the algorithm. This function uses calculations guess the number of moves required to change the current state into the goal state. These calculations are referred to as *heuristics*, and more specifically as *admissable heuristics*. For a heuristic to be admissable, it must always **understimate or equal** the cost to reach the goal for any given state. This ensures that we are always following the most optimal, meaning shortest, path to the solution. Heuristics that violate admissablility will not crash the program or cause any drastic errors, they will just simply lead to suboptimal solutions.
+
+This project currently uses two heuristics in combination: `manhattan distance` and `generalized linear conflict`.
+
+#### Manhattan Distance
+The Manhattan Distance heuristic is quite simple. Given a board and knowing the goal state, it calculates the sum of the horizontal and vertical distance from each tile's current position to its goal position. It can be imagined as taking each tile and sliding it horizontally and vertically into its goal position. This heuristic gives an effective lower bound on the number of moves required to reach a state, becuase it does not take into consideration the interactions between tiles.   
+
+From our example before:   
+| 1 | 7 | 15 | 4 |
+|--|---|---|--|
+|**0**|**6**|**3**|**8**|  
+|**2**|**5**|**14**|**11**|
+|**9**|**13**|**10**|**12**|      
+
+The Manhattan distance would be: `0 + 2 + 3 + 0 + 0 + 1 + 0 + 3 + 1 + 2 + 1 + 1 + 1 + 2 + 1 = 18`   
+It is important to note that we skip calculation anything for the 0 tile, as it is allowed to move. As it turns out, skipping the 0 tile for Manhattan distance calculations leads to much better cost estimation, as the 0 tile is what we use to manipulate the board.
+
