@@ -32,6 +32,9 @@ int contained_in_db(FILE* db, struct simplified_state* statePtr){
 	return 0;
 }
 
+void example(char* input){
+	printf("Input was: %s\n", input);
+}
 
 
 int main(int argc, char** argv){
