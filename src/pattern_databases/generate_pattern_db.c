@@ -16,6 +16,7 @@ struct simplified_state{
 	//Define the tiles as an N by N array
 	int** tiles;
 	short zero_row, zero_column;
+	int lastMove;
 };
 
 
@@ -58,6 +59,9 @@ void create_goal_state(struct simplified_state* initial){
 
 	//Zero row and zero column are both N-1
 	initial->zero_row = initial->zero_column = N-1;
+
+	//Set this to avoid valse positives
+	initial->lastMove = -1;
 }
 
 
@@ -207,7 +211,10 @@ void move_left(struct simplified_state* statePtr){
 /**
  * Generate patterns back to a certain traceback_depth
  */
-void generate_patterns(int traceback_depth){
+int generate_patterns(int traceback_depth){
+	//Store the number of patterns generated
+	int num_generated;
+
 	/**
 	 * From before, N puzzles of a depth less than 30 seem easy to solve quickly. So, for our generation, we will
 	 * generate states with moves starting from 30 and up to the traceback_depth
@@ -216,9 +223,9 @@ void generate_patterns(int traceback_depth){
 	srand(time(NULL));
 	int random_move;
 
-	for(int max_moves = 30; max_moves < traceback_depth; max_moves++){
-		//For each depth, generate 100 states of that depth
-		for(int j = 0; j < 100; j++){
+	for(int max_moves = 15; max_moves < traceback_depth; max_moves++){
+		//For each depth, generate 200 states of that depth
+		for(int j = 0; j < 10000; j++){
 			//Always start at the goal state and work backwards
 			struct simplified_state* start = malloc(sizeof(struct simplified_state));
 			//Generate goal state mathematically
@@ -239,32 +246,55 @@ void generate_patterns(int traceback_depth){
 				//Every time we successfully make a random move, we've moved one more away from the goal, so increment cost
 				//Move left if possible and random_move is 0
 				if(random_move == 0 && start->zero_column > 0){
+					if(start->lastMove == 1){
+						moves--;
+						continue;
+					}
+
 					move_left(start);
+					start->lastMove = 0;
 					pc->cost++;
 				}
 
-				//Move right if possible and random move is 1
 				if(random_move == 1 && start->zero_column < N-1){
+					if(start->lastMove == 0){
+						moves--;
+						continue;
+					}
+
 					move_right(start);
+					start->lastMove = 1;
 					pc->cost++;
-				}
-
-				//Move down if possible and random move is 2
+				} 
+			
 				if(random_move == 2 && start->zero_row < N-1){
+					if(start->lastMove == 3){
+						moves--;
+						continue;
+					}
 					move_down(start);
+					start->lastMove = 2;
 					pc->cost++;
 				}
 
-				//Move up if possible and random move is 3
 				if(random_move == 3 && start->zero_row > 0){
+					if(start->lastMove == 2){
+						moves--;
+						continue;
+					}
 					move_up(start);
+					start->lastMove = 3;
 					pc->cost++;
 				}
 			}
 			//Save the pattern in memory if it is not a repeat
-			store_pattern(pc);	
+			if(store_pattern(pc)){
+				num_generated++;
+			}	
 		}
 	}
+
+	return num_generated;
 }
 
 
@@ -317,18 +347,32 @@ int main(int argc, char** argv){
 	//Filename is always of format "N_G.patterndb"
 	char db_filename[14];
 
-	//Test
-	generate_patterns(80);
-
 	//Save the filename into a string
-	//sprintf(db_filename, "%d_%d.patterndb", N, group_size);
+	sprintf(db_filename, "%d_%d.patterndb", N, group_size);
 
-	//printf("Generating database: %s\n\n", db_filename);
 
-	//FILE* db = fopen(db_filename, "w");	
+	//Test
+	printf("Now generating database for %d puzzle problem\n", N);
+	printf("Success! Generated %d distinct patterns\n", generate_patterns(100));
+
+	printf("Saving to database file: %s\n\n", db_filename);
+
+	FILE* db = fopen(db_filename, "w");	
+
+	while(patterns != NULL){
+		for(int i = 0; i < N; i++){
+			for(int j = 0; j < N; j++){
+//				printf("%d ", patterns->pattern->tiles[i][j]);
+			}
+		}
+//		printf("%d\n", patterns->cost);
+	//	fprintf(db, "%d\n", patterns->cost);
+		patterns = patterns->next;
+	}
+
 
 	//Be sure to close the file
-	//fclose(db);
+	fclose(db);
 
 	return 0;
 }
