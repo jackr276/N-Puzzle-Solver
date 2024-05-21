@@ -15,13 +15,16 @@ int N;
 struct simplified_state{
 	//Define the tiles as an N by N array
 	int** tiles;
+	//Keep track of the zero_row and zero_column for convenience
 	short zero_row, zero_column;
+	//Enhancement -- keep track of the last move to avoid undoing moves
 	int lastMove;
 };
 
 
 struct pattern_cost{
-	struct simplified_state* pattern;
+	struct simplified_state* state;
+	int* pattern;
 	int cost;
 	struct pattern_cost* next;
 };
@@ -30,7 +33,8 @@ struct pattern_cost{
 
 
 //We will keep a linked list of all patterns seen to avoid storing repeats
-struct pattern_cost* patterns = NULL;
+struct pattern_cost* patterns_first_half = NULL;
+struct pattern_cost* patterns_last_half = NULL;
 
 
 /**
@@ -110,19 +114,30 @@ int states_same(struct simplified_state* statePtr1, struct simplified_state* sta
  * we will first store all patterns in memory, and then write this linked list to a database
  * file after everything has been made
  */
-int store_pattern(struct pattern_cost* patternPtr){
-	//Define a cursor to avoid messing with linked list head
-	struct pattern_cost* cursor = patterns;	
+int store_pattern(struct pattern_cost* patternPtr, int option){
+	struct pattern_cost* cursor;
 
-	//Special case, adding at head
-	if(patterns == NULL){
-		patterns = patternPtr;
-		return 0;
+	if(option == 0){
+		cursor = patterns_first_half;	
+		//Special case, adding at head
+		if(patterns_first_half == NULL){
+			patterns_first_half = patternPtr;
+			return 0;
+		}
+
+	} else {
+		cursor = patterns_last_half;
+		//special case, adding at head	
+		if(patterns_last_half == NULL){
+				patterns_last_half = patternPtr;
+				return 0;
+		}
 	}
+
 
 	//Iterate through the entire linked list
 	while(cursor->next != NULL){
-		if(states_same(cursor->pattern, patternPtr->pattern)){
+		if(states_same(cursor->state, patternPtr->state)){
 			//Two options here
 			if(patternPtr->cost < cursor->cost){
 				//We must always store the lowest possible cost, so change it if we find this
@@ -131,7 +146,7 @@ int store_pattern(struct pattern_cost* patternPtr){
 			
 			//PatternPtr was a repeat, and is useless
 			//Free the statePtr in patternPtr
-			destroy_state(patternPtr->pattern);
+			destroy_state(patternPtr->state);
 			//Free the pointer
 			free(patternPtr);
 			//Set to NULL as a warning
@@ -213,46 +228,89 @@ void move_left(struct simplified_state* statePtr){
 }
 
 
+/**
+ * Genereate and save the pattern for the first N^2/2 tiles in the state saved in patternPtr
+ */
+void generate_first_half(struct pattern_cost* patternPtr){
+	//Our array will have to hold N*N/2 for the first half of the tiles
+	int pattern[N * N / 2];
+
+	int tile;
+
+	//Go through each tile checking if it is part of our pattern
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			//Grab tile for convenience
+			tile = patternPtr->state->tiles[i][j];
+			//We only care about the tile if it is in our range and it isn't 0
+			if(tile <= N*N/2 && tile != 0){
+				//The tile's position encodes its value, and the value stored encodes its pattern position
+				//Example: Tile 1 is usually at position 0, but in the pattern its at 5 so at position 0 we store 5
+				pattern[tile - 1] = i * N + j;
+			}
+		}
+	}
+
+	patternPtr->pattern = pattern;
+}
+
 
 /**
- * Generate patterns back to a certain traceback_depth
+ * Genereate and save the pattern for the last N^2/2 - 1 tiles in the state saved in patternPtr
  */
-int generate_patterns_first8(int traceback_depth){
-	//Store the number of patterns generated
-	int num_generated;
+void generate_last_half(struct pattern_cost* patternPtr){
+	//Our array will have to hold N*N/2 - 1 for the last half of the tiles
+	int pattern[N * N / 2 - 1];
 
-	/**
-	 * From before, N puzzles of a depth less than 30 seem easy to solve quickly. So, for our generation, we will
-	 * generate states with moves starting from 30 and up to the traceback_depth
-	 */
+	int tile;
+
+	//Go through each tile checking if it is part of our pattern
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			//Grab tile for convenience
+			tile = patternPtr->state->tiles[i][j];
+			//We only care about the tile if it is in our range and it isn't 0
+			if(tile >= N*N/2 + 1 && tile != 0){
+				//The tile's position encodes its value, and the value stored encodes its pattern position
+				//Example: Tile 9 is usually at position 8, but in the pattern its at 5 so at position 0 we store 5
+				pattern[tile - (N*N/2 - 1)] = i * N + j;
+			}
+		}
+	}
+
+	patternPtr->pattern = pattern;
+}
+
+
+void* generator_first_half_worker(void* moves){
+	//Grab the max_moves from the parameters
+	int max_moves = *((int*)moves);
+
 	//Set the seed for random generation
 	srand(time(NULL));
 	int random_move;
 
-	for(int max_moves = 15; max_moves < traceback_depth; max_moves++){
-		//For each depth, generate 200 states of that depth
-		for(int j = 0; j < 1000; j++){
-			//Always start at the goal state and work backwards
-			struct simplified_state* start = malloc(sizeof(struct simplified_state));
-			//Generate goal state mathematically
-			create_goal_state(start);
+		//Always start at the goal state and work backwards
+		struct simplified_state* start = malloc(sizeof(struct simplified_state));
+		//Generate goal state mathematically
+		create_goal_state(start);
 
-			//Create the pattern_cost struct
-			struct pattern_cost* pc = malloc(sizeof(struct pattern_cost));
-			//Point the pattern of pc to the newly made start state
-			pc->pattern = start;
-			//We are at the goal state, so no cost yet
-			pc->cost = 0;
+		//Create the pattern_cost struct
+		struct pattern_cost* pc = malloc(sizeof(struct pattern_cost));
+		//Point the pattern of pc to the newly made start state
+		pc->state = start;
+		//We are at the goal state, so no cost yet
+		pc->cost = 0;
 
-			//Now to generate a pattern randomly, perform i random moves on start
-			for(int moves = 0; moves < max_moves; moves++){
-				//Get a random move between 0 and 3
-				random_move = rand() % 4;
+		//Now to generate a pattern randomly, perform i random moves on start
+		for(int moves = 0; moves < max_moves; moves++){
+			//Get a random move between 0 and 3
+			random_move = rand() % 4;
 		
-				//Every time we successfully make a random move, we've moved one more away from the goal, so increment cost
-				//Move left if possible and random_move is 0
-				if(random_move == 0 && start->zero_column > 0){
-					if(start->lastMove == 1){
+			//Every time we successfully make a random move, we've moved one more away from the goal, so increment cost
+			//Move left if possible and random_move is 0
+			if(random_move == 0 && start->zero_column > 0){
+				if(start->lastMove == 1){
 						moves--;
 						continue;
 					}
@@ -292,11 +350,125 @@ int generate_patterns_first8(int traceback_depth){
 					start->lastMove = 3;
 					pc->cost++;
 				}
-			}
+			
 			//Save the pattern in memory if it is not a repeat
-			if(store_pattern(pc)){
+			if(store_pattern(pc, 0)){
 				num_generated++;
-			}	
+			}
+
+		}
+}
+
+
+void* generator_last_half_worker(void* moves){
+	//Set the seed for random generation
+	srand(time(NULL));
+	//Grab the max_moves from the parameters
+	int max_moves = *((int*)moves);
+
+	//Set the seed for random generation
+	srand(time(NULL));
+	int random_move;
+
+		//Always start at the goal state and work backwards
+		struct simplified_state* start = malloc(sizeof(struct simplified_state));
+		//Generate goal state mathematically
+		create_goal_state(start);
+
+		//Create the pattern_cost struct
+		struct pattern_cost* pc = malloc(sizeof(struct pattern_cost));
+		//Point the pattern of pc to the newly made start state
+		pc->state = start;
+		//We are at the goal state, so no cost yet
+		pc->cost = 0;
+
+		//Now to generate a pattern randomly, perform i random moves on start
+		for(int moves = 0; moves < max_moves; moves++){
+			//Get a random move between 0 and 3
+			random_move = rand() % 4;
+		
+			//Every time we successfully make a random move, we've moved one more away from the goal, so increment cost
+			//Move left if possible and random_move is 0
+			if(random_move == 0 && start->zero_column > 0){
+				if(start->lastMove == 1){
+						moves--;
+						continue;
+					}
+
+					move_left(start);
+					start->lastMove = 0;
+					pc->cost++;
+				}
+
+				if(random_move == 1 && start->zero_column < N-1){
+					if(start->lastMove == 0){
+						moves--;
+						continue;
+					}
+
+					move_right(start);
+					start->lastMove = 1;
+					pc->cost++;
+				} 
+			
+				if(random_move == 2 && start->zero_row < N-1){
+					if(start->lastMove == 3){
+						moves--;
+						continue;
+					}
+					move_down(start);
+					start->lastMove = 2;
+					pc->cost++;
+				}
+
+				if(random_move == 3 && start->zero_row > 0){
+					if(start->lastMove == 2){
+						moves--;
+						continue;
+					}
+					move_up(start);
+					start->lastMove = 3;
+					pc->cost++;
+				}
+			
+			//Save the pattern in memory if it is not a repeat
+			if(store_pattern(pc, 1)){
+				num_generated++;
+			}
+
+		}
+}
+
+
+/**
+ * Generate patterns back to a certain traceback_depth
+ */
+int generate_patterns(int traceback_depth, int option){
+	//Store the number of patterns generated
+	int num_generated;
+
+	/**
+	 * From before, N puzzles of a depth less than 30 seem easy to solve quickly. So, for our generation, we will
+	 * generate states with moves starting from 30 and up to the traceback_depth
+	 */
+	int random_move;
+
+	//Store the threads in an array
+	pthread_t threadArr[2000];
+
+	for(int max_moves = 10; max_moves < traceback_depth; max_moves++){
+	
+		for(int i = 0; i < 1000; i++){
+			pthread_create(&threadArr[i], NULL, generator_first_half_worker, &max_moves);	
+		}
+
+		for(int i = 1000; i < 2000; i++){	
+			pthread_create(&threadArr[i], NULL, generator_last_half_worker, &max_moves);
+		}
+
+
+		for(int i = 0; i < 2000; i++){
+			pthread_join(threadArr[i], NULL);
 		}
 	}
 
@@ -321,7 +493,6 @@ int generate_patterns_first8(int traceback_depth){
  * 0 1 2 3 4 5 6 7 0 
 
  *******************************************************************************************/
-
 
 
 
@@ -365,7 +536,7 @@ int main(int argc, char** argv){
 
 	FILE* db = fopen(db_filename, "w");	
 
-	while(patterns != NULL){
+	while(patterns_first_half != NULL){
 		for(int i = 0; i < N; i++){
 			for(int j = 0; j < N; j++){
 //				printf("%d ", patterns->pattern->tiles[i][j]);
@@ -373,7 +544,7 @@ int main(int argc, char** argv){
 		}
 //		printf("%d\n", patterns->cost);
 	//	fprintf(db, "%d\n", patterns->cost);
-		patterns = patterns->next;
+		patterns_first_half = patterns_first_half->next;
 	}
 
 
