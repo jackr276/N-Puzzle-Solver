@@ -35,7 +35,8 @@ struct pattern_cost{
 //We will keep a linked list of all patterns seen to avoid storing repeats
 struct pattern_cost* patterns_first_half = NULL;
 struct pattern_cost* patterns_last_half = NULL;
-
+//Keep track of the number of unique patterns generated
+int num_unique_patterns = 0;
 
 pthread_mutex_t first_half_mutex;
 pthread_mutex_t last_half_mutex;
@@ -164,6 +165,8 @@ int store_pattern(struct pattern_cost* patternPtr, int option){
 
 	//If we get here, we've reached the tail and we didn't find a repeat, so store patternPtr
 	cursor->next = patternPtr;
+	//We've added one more unique pattern
+	num_unique_patterns++;
 	//If we get here, its unique so return false
 	return 0;
 }
@@ -365,6 +368,7 @@ void* generator_first_half_worker(void* moves){
 		pthread_mutex_lock(&first_half_mutex);
 		store_pattern(pc, 0);
 		pthread_mutex_unlock(&first_half_mutex);
+
 	return NULL;
 }
 
@@ -453,35 +457,32 @@ void* generator_last_half_worker(void* moves){
 /**
  * Generate patterns back to a certain traceback_depth
  */
-int generate_patterns(int traceback_depth){
-	//Store the number of patterns generated
-	int num_generated = 0;
-
+void generate_patterns(int traceback_depth){
 	/**
 	 * From before, N puzzles of a depth less than 30 seem easy to solve quickly. So, for our generation, we will
 	 * generate states with moves starting from 30 and up to the traceback_depth
 	 */
 
 	//Store the threads in an array
-	pthread_t threadArr[2000];
+	pthread_t threadArr[20000];
 
 	for(int max_moves = 10; max_moves < traceback_depth; max_moves++){
-	
-		for(int i = 0; i < 1000; i++){
+			
+		for(int i = 0; i < 10000; i++){
 			pthread_create(&threadArr[i], NULL, generator_first_half_worker, &max_moves);	
 		}
 
-		for(int i = 1000; i < 2000; i++){	
+		for(int i = 10000; i < 20000; i++){	
 			pthread_create(&threadArr[i], NULL, generator_last_half_worker, &max_moves);
 		}
 
 
-		for(int i = 0; i < 2000; i++){
+		for(int i = 0; i < 20000; i++){
 			pthread_join(threadArr[i], NULL);
 		}
-	}
 
-	return num_generated;
+		printf("Currently generated %d unique patterns\n", num_unique_patterns);
+	}
 }
 
 
@@ -541,8 +542,8 @@ int main(int argc, char** argv){
 	pthread_mutex_init(&last_half_mutex, NULL);
 	//Test
 	printf("Now generating database for %d puzzle problem\n", N);
-	printf("Success! Generated %d distinct patterns\n", generate_patterns(100));
-	printf("here");
+	generate_patterns(100);
+	printf("Success! Generated %d distinct patterns\n", num_unique_patterns);
 
 
 	pthread_mutex_destroy(&first_half_mutex);
