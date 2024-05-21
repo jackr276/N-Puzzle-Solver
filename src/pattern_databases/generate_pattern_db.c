@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <pthread.h>
 
@@ -464,28 +465,37 @@ void generate_patterns(int traceback_depth){
 	 * generate states with moves starting from 30 and up to the traceback_depth
 	 */
 
-	//Store the threads in an array
-	pthread_t threadArr[20000];
+		
 
-	for(int max_moves = 10; max_moves < traceback_depth; max_moves++){
+
+	for(int iter = 0; iter < 50000; iter++){			
+		printf("Still generating, currently generated %d unique patterns\n", num_unique_patterns);
+
+
+		pthread_t threadArr[50];
+
+		//Store the threads in an array
+		for(int max_moves = 10; max_moves < traceback_depth; max_moves++){
 			
-		for(int i = 0; i < 10000; i++){
-			pthread_create(&threadArr[i], NULL, generator_first_half_worker, &max_moves);	
+			for(int i = 0; i < 25; i++){
+				pthread_create(&threadArr[i], NULL, generator_first_half_worker, &max_moves);	
+			}
+
+			for(int i = 25; i < 50; i++){	
+				pthread_create(&threadArr[i], NULL, generator_last_half_worker, &max_moves);
+			}
+		
+
+			for(int i = 0; i < 25; i++){
+				pthread_join(threadArr[i], NULL);
+			}
+
+			
 		}
 
-		for(int i = 10000; i < 20000; i++){	
-			pthread_create(&threadArr[i], NULL, generator_last_half_worker, &max_moves);
-		}
 
-
-		for(int i = 0; i < 20000; i++){
-			pthread_join(threadArr[i], NULL);
-		}
-
-		printf("Currently generated %d unique patterns\n", num_unique_patterns);
 	}
 }
-
 
 /********************************************************************************************
  * Basic Idea: Store some pattern and how many moves it takes to go from that pattern to goal
@@ -545,6 +555,19 @@ int main(int argc, char** argv){
 	printf("Now generating database for %d puzzle problem\n", N);
 	generate_patterns(100);
 	printf("Success! Generated %d distinct patterns\n", num_unique_patterns);
+
+	while(patterns_first_half != NULL){
+		for(int i = 0; i < N; i++){
+			for(int j = 0; j < N; j++){
+				printf("%d ", patterns_first_half->state->tiles[i][j]);
+			}
+		};
+		printf("%d\n", patterns_first_half->cost);
+	//	fprintf(db, "%d\n", patterns->cost);
+		
+		patterns_first_half = patterns_first_half->next;
+	}
+
 
 
 	pthread_mutex_destroy(&first_half_mutex);
