@@ -165,6 +165,7 @@ int store_pattern(struct pattern_cost* patternPtr, int option){
 
 	//If we get here, we've reached the tail and we didn't find a repeat, so store patternPtr
 	cursor->next = patternPtr;
+	patternPtr->next = NULL;
 	//We've added one more unique pattern
 	num_unique_patterns++;
 	//If we get here, its unique so return false
