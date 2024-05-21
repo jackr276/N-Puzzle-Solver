@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
+#include <pthread.h>
 
 //Define a global variable for the value of N
 int N;
@@ -25,6 +25,8 @@ struct pattern_cost{
 	int cost;
 	struct pattern_cost* next;
 };
+
+
 
 
 //We will keep a linked list of all patterns seen to avoid storing repeats
@@ -153,13 +155,17 @@ int store_pattern(struct pattern_cost* patternPtr){
  * A simple function that swaps two tiles in the provided state
  * Note: The swap function assumes all row positions are valid, this must be checked by the caller
  */
-void swap(int row1, int column1, int row2, int column2, struct simplified_state* statePtr){
+int swap(int row1, int column1, int row2, int column2, struct simplified_state* statePtr){
 	//Store the first tile in a temp variable
 	int tile = statePtr->tiles[row1][column1];
 	//Put the tile from row2, column2 into row1, column1
 	statePtr->tiles[row1][column1] = statePtr->tiles[row2][column2];
+	//Grab and store swapped tile
+	int swapped = statePtr->tiles[row2][column2];
 	//Put the temp in row2, column2
 	statePtr->tiles[row2][column2] = tile;
+
+	return swapped;
 }
 
 
@@ -211,7 +217,7 @@ void move_left(struct simplified_state* statePtr){
 /**
  * Generate patterns back to a certain traceback_depth
  */
-int generate_patterns(int traceback_depth){
+int generate_patterns_first8(int traceback_depth){
 	//Store the number of patterns generated
 	int num_generated;
 
@@ -225,7 +231,7 @@ int generate_patterns(int traceback_depth){
 
 	for(int max_moves = 15; max_moves < traceback_depth; max_moves++){
 		//For each depth, generate 200 states of that depth
-		for(int j = 0; j < 10000; j++){
+		for(int j = 0; j < 1000; j++){
 			//Always start at the goal state and work backwards
 			struct simplified_state* start = malloc(sizeof(struct simplified_state));
 			//Generate goal state mathematically
@@ -307,12 +313,12 @@ int generate_patterns(int traceback_depth){
  * With this, we can identify the 
  *
  * So for Example:
- * 1  2  3  0
- * 5  6  7  4
- * 9  10 11 8
- * 13 14 15 12
+ * 1  2  3  4 
+ * 5  6  7  8 
+ * 9  10 11 12 
+ * 13 14 15 0
  * Can be encoded as
- * 1 2 3 0 5 6 7 4 9 10 11 8 13 14 15 12 3, where 3 is how many moves from goal this state is 
+ * 0 1 2 3 4 5 6 7 0 
 
  *******************************************************************************************/
 
@@ -321,9 +327,9 @@ int generate_patterns(int traceback_depth){
 
 int main(int argc, char** argv){
 	//Check to ensure proper number of arguments
-	if(argc < 3){
+	if(argc < 2){
 		printf("Incorrect number of program arguments.\n");
-		printf("Usage: ./generate_pattern_db <N> <G>\n Where <N> is the row/column number of the N puzzle, <G> is group size\n");
+		printf("Usage: ./generate_pattern_db <N>\n Where <N> is the row/column number of the N puzzle\n");
 		return 0;
 	}
 
@@ -331,9 +337,9 @@ int main(int argc, char** argv){
 	int group_size;
 
 	//Get the N and G value from the user for which database that they want to generate 
-	if(sscanf(argv[1], "%d", &N) != 1 || sscanf(argv[2], "%d", &group_size) != 1){	
+	if(sscanf(argv[1], "%d", &N) != 1){	
 		printf("Incorrect type of program arguments.\n");
-		printf("Usage: ./generate_pattern_db <N>\n Where <N> is the row/column number of the N puzzle, <G> is group size\n");
+		printf("Usage: ./generate_pattern_db <N>\n Where <N> is the row/column number of the N puzzle\n");
 		return 0;
 	}
 
@@ -353,7 +359,7 @@ int main(int argc, char** argv){
 
 	//Test
 	printf("Now generating database for %d puzzle problem\n", N);
-	printf("Success! Generated %d distinct patterns\n", generate_patterns(100));
+	//printf("Success! Generated %d distinct patterns\n", generate_patterns(100));
 
 	printf("Saving to database file: %s\n\n", db_filename);
 
