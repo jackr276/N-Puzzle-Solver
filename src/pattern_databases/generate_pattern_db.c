@@ -28,9 +28,15 @@ struct pattern_cost{
 	struct simplified_state* state;
 	int* pattern;
 	int cost;
+	//0 = first half, 1  = last half
+	int pattern_type;
 	struct pattern_cost* next;
 };
 
+struct thread_params{
+	int max_moves;
+	int pattern_type;
+};
 
 
 
@@ -40,8 +46,8 @@ struct pattern_cost* patterns_last_half = NULL;
 //Keep track of the number of unique patterns generated
 int num_unique_patterns = 0;
 
-pthread_mutex_t first_half_mutex;
-pthread_mutex_t last_half_mutex;
+pthread_mutex_t first_half_lock;
+pthread_mutex_t last_half_lock;
 
 
 /**
@@ -142,15 +148,20 @@ int states_same(struct simplified_state* statePtr1, struct simplified_state* sta
 }
 
 
+void generate_pattern_from_state(struct pattern_cost* patternPtr){
+
+}
+
+
 /**
  * This function stores the pattern in a temporary linked list in memory. For simplicity,
  * we will first store all patterns in memory, and then write this linked list to a database
  * file after everything has been made
  */
-int store_pattern(struct pattern_cost* patternPtr, int option){
-	struct pattern_cost* cursor;
+int store_pattern(struct pattern_cost* patternPtr){
+	struct pattern_cost* cursor;	
 
-	if(option == 0){
+	if(!patternPtr->pattern_type){
 		cursor = patterns_first_half;	
 		//Special case, adding at head
 		if(patterns_first_half == NULL){
@@ -272,72 +283,24 @@ int move_left(struct simplified_state* statePtr){
 }
 
 
-/**
- * Genereate and save the pattern for the first N^2/2 tiles in the state saved in patternPtr
- */
-void generate_first_half(struct pattern_cost* patternPtr){
-	//Our array will have to hold N*N/2 for the first half of the tiles
-	int pattern[N * N / 2];
-
-	int tile;
-
-	//Go through each tile checking if it is part of our pattern
-	for(int i = 0; i < N; i++){
-		for(int j = 0; j < N; j++){
-			//Grab tile for convenience
-			tile = patternPtr->state->tiles[i][j];
-			//We only care about the tile if it is in our range and it isn't 0
-			if(tile <= N*N/2 && tile != 0){
-				//The tile's position encodes its value, and the value stored encodes its pattern position
-				//Example: Tile 1 is usually at position 0, but in the pattern its at 5 so at position 0 we store 5
-				pattern[tile - 1] = i * N + j;
-			}
-		}
-	}
-
-	patternPtr->pattern = pattern;
-}
-
-
-/**
- * Genereate and save the pattern for the last N^2/2 - 1 tiles in the state saved in patternPtr
- */
-void generate_last_half(struct pattern_cost* patternPtr){
-	//Our array will have to hold N*N/2 - 1 for the last half of the tiles
-	int pattern[N * N / 2 - 1];
-
-	int tile;
-
-	//Go through each tile checking if it is part of our pattern
-	for(int i = 0; i < N; i++){
-		for(int j = 0; j < N; j++){
-			//Grab tile for convenience
-			tile = patternPtr->state->tiles[i][j];
-			//We only care about the tile if it is in our range and it isn't 0
-			if(tile >= N*N/2 + 1 && tile != 0){
-				//The tile's position encodes its value, and the value stored encodes its pattern position
-				//Example: Tile 9 is usually at position 8, but in the pattern its at 5 so at position 0 we store 5
-				pattern[tile - (N*N/2 - 1)] = i * N + j;
-			}
-		}
-	}
-
-	patternPtr->pattern = pattern;
-}
-
-
-void* generator_first_half_worker(void* moves){
-	//Grab the max_moves from the parameters
-	int max_moves = *((int*)moves);
+void* generator_worker(void* thread_params){
+	//Grab the max_moves and pattern type from the parameters
+	int max_moves = ((struct thread_params*)thread_params)->max_moves;
+	int pattern_type = ((struct thread_params*)thread_params)->pattern_type;
 
 	//Set the seed for random generation
 	srand(time(NULL));
 	int random_move;
 
-	//Always start at the goal state and work backwards
-	struct simplified_state* start = (struct simplified_state*)malloc(sizeof(struct simplified_state));
-	//Generate goal state mathematically
-	create_goal_state(start, 0);
+	//Save all patterns to a write buffer
+	struct pattern_cost* write_buffer[30];
+
+	//Have each thread run 30 iterations
+	for(int i = 0; i < 30; i++){
+		//Always start at the goal state and work backwards
+		struct simplified_state* start = (struct simplified_state*)malloc(sizeof(struct simplified_state));
+		//Generate goal state mathematically
+		create_goal_state(start, pattern_type);
 
 
 		//Create the pattern_cost struct
@@ -346,24 +309,26 @@ void* generator_first_half_worker(void* moves){
 		pc->state = start;
 		//We are at the goal state, so no cost yet
 		pc->cost = 0;
+		//Set the pattern type appropriately
+		pc->pattern_type = pattern_type;
 
 		//Now to generate a pattern randomly, perform i random moves on start
 		for(int moves = 0; moves < max_moves; moves++){
 			//Get a random move between 0 and 3
 			random_move = rand() % 4;
-		
+
 			//Every time we successfully make a random move, we've moved one more away from the goal, so increment cost
 			//Move left if possible and random_move is 0
 			if(random_move == 0 && start->zero_column > 0){
 				if(start->lastMove == 1){
-						moves--;
-						continue;
-					}
+					moves--;
+					continue;
+				}
 
 				if(!move_left(start)){
 					pc->cost++;
 				}	
-					
+				
 				start->lastMove = 0;
 			}
 
@@ -405,103 +370,24 @@ void* generator_first_half_worker(void* moves){
 
 				start->lastMove = 3;
 			}	
-		}	
+		}
+		write_buffer[i] = pc;
+	}
 
+	//Store patterns from write buffer
+	for(int i = 0; i < 30; i++){
 		//Save the pattern in memory if it is not a repeat
-		pthread_mutex_lock(&first_half_mutex);
-		store_pattern(pc, 0);
-		pthread_mutex_unlock(&first_half_mutex);
-
-	return NULL;
-}
-
-
-void* generator_last_half_worker(void* moves){
-	//Set the seed for random generation
-	srand(time(NULL));
-	//Grab the max_moves from the parameters
-	int max_moves = *((int*)moves);
-
-	//Set the seed for random generation
-	srand(time(NULL));
-	int random_move;
-
-		//Always start at the goal state and work backwards
-		struct simplified_state* start = (struct simplified_state*)malloc(sizeof(struct simplified_state));
-		//Generate goal state mathematically
-		create_goal_state(start, 1);
-
-		//Create the pattern_cost struct
-		struct pattern_cost* pc = malloc(sizeof(struct pattern_cost));
-		//Point the pattern of pc to the newly made start state
-		pc->state = start;
-		//We are at the goal state, so no cost yet
-		pc->cost = 0;
-
-		//Now to generate a pattern randomly, perform i random moves on start
-		for(int moves = 0; moves < max_moves; moves++){
-			//Get a random move between 0 and 3
-			random_move = rand() % 4;
-		
-			//Every time we successfully make a random move, we've moved one more away from the goal, so increment cost
-			//Move left if possible and random_move is 0
-			if(random_move == 0 && start->zero_column > 0){
-				if(start->lastMove == 1){
-						moves--;
-						continue;
-					}
-
-				if(!move_left(start)){
-					pc->cost++;
-				}	
-					
-				start->lastMove = 0;
-			}
-
-			if(random_move == 1 && start->zero_column < N-1){
-				if(start->lastMove == 0){
-					moves--;
-					continue;
-				}
-
-				if(!move_right(start)){
-					pc->cost++;
-				}
-				
-				start->lastMove = 1;
-			} 
-			
-			if(random_move == 2 && start->zero_row < N-1){
-				if(start->lastMove == 3){
-					moves--;
-					continue;
-				}
-			
-				if(!move_down(start)){
-					pc->cost++;
-				}
-
-				start->lastMove = 2;
-			}
-
-			if(random_move == 3 && start->zero_row > 0){
-				if(start->lastMove == 2){
-					moves--;
-					continue;
-				}
-				
-				if(!move_up(start)){
-					pc->cost++;
-				}
-
-				start->lastMove = 3;
-			}	
-		}	
-
 	
-		pthread_mutex_lock(&last_half_mutex);	
-		store_pattern(pc, 1);
-		pthread_mutex_unlock(&last_half_mutex);
+		if(!pattern_type){
+			pthread_mutex_lock(&first_half_lock);
+			store_pattern(write_buffer[i]);
+			pthread_mutex_unlock(&first_half_lock);
+		} else {
+			pthread_mutex_lock(&last_half_lock);
+			store_pattern(write_buffer[i]);
+			pthread_mutex_unlock(&last_half_lock);
+		}
+	}
 
 	return NULL;
 }
@@ -510,37 +396,50 @@ void* generator_last_half_worker(void* moves){
 /**
  * Generate patterns back to a certain traceback_depth
  */
-void generate_patterns(int traceback_depth){
+void generate_patterns(int max_moves){
 	/**
 	 * From before, N puzzles of a depth less than 30 seem easy to solve quickly. So, for our generation, we will
 	 * generate states with moves starting from 30 and up to the traceback_depth
 	 */
 
-		
+	//Create the thread params structure
+	struct thread_params* parameters1 = malloc(sizeof(struct thread_params*));
+	struct thread_params* parameters2 = malloc(sizeof(struct thread_params*));
 
+	//Initialize max moves and pattern type for both thread_params
+	parameters1->max_moves = max_moves;
+	parameters2->max_moves = max_moves;
+	parameters1->pattern_type = 0;
+	parameters2->pattern_type = 1;
 
-	for(int iter = 0; iter < 10; iter++){			
-		pthread_t threadArr[50];
+	pthread_t threadArr[50];
+
+	for(int iter = 0; iter < 100; iter++){			
 
 		//Store the threads in an array
-		for(int max_moves = 10; max_moves < traceback_depth; max_moves++){
-			
+		for(int moves = 10; moves < max_moves; moves++){
+
 			for(int i = 0; i < 25; i++){
-				pthread_create(&threadArr[i], NULL, generator_first_half_worker, &max_moves);	
+				pthread_create(&threadArr[i], NULL, generator_worker, parameters1);	
 			}
 
+
 			for(int i = 25; i < 50; i++){	
-				pthread_create(&threadArr[i], NULL, generator_last_half_worker, &max_moves);
+				pthread_create(&threadArr[i], NULL, generator_worker, parameters2);
 			}
 		
 
-			for(int i = 0; i < 25; i++){
+			for(int i = 0; i < 50; i++){
 				pthread_join(threadArr[i], NULL);
 			}
 		}
 
 		printf("Still generating, currently generated %d unique patterns\n", num_unique_patterns);
 	}
+	
+	//Be sure to deallocate when done
+	free(parameters1);
+	free(parameters2);
 }
 
 /********************************************************************************************
@@ -554,8 +453,8 @@ void generate_patterns(int traceback_depth){
  * So for Example:
  * 1  2  3  4 
  * 5  6  7  8 
- * 9  10 11 12 
- * 13 14 15 0
+ * 0  0  0  0  
+ * 0  0  0  0
  * Can be encoded as
  * 0 1 2 3 4 5 6 7 0 
 
@@ -595,8 +494,8 @@ int main(int argc, char** argv){
 	sprintf(db_filename, "%d.patterndb", N);
 
 
-	pthread_mutex_init(&first_half_mutex, NULL);
-	pthread_mutex_init(&last_half_mutex, NULL);
+	pthread_mutex_init(&first_half_lock, NULL);
+	pthread_mutex_init(&last_half_lock, NULL);
 	//Test
 	printf("Now generating database for %d puzzle problem\n", N);
 	generate_patterns(80);
@@ -613,8 +512,8 @@ int main(int argc, char** argv){
 
 
 
-	pthread_mutex_destroy(&first_half_mutex);
-	pthread_mutex_destroy(&last_half_mutex);
+	pthread_mutex_destroy(&first_half_lock);
+	pthread_mutex_destroy(&last_half_lock);
 
 	printf("Saving to database file: %s\n\n", db_filename);
 	return 0;
