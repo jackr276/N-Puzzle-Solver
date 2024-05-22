@@ -23,6 +23,7 @@ struct simplified_state{
 };
 
 
+//Define a self referential struct to store a pattern and a cost. The pattern is what we really care about here
 struct pattern_cost{
 	struct simplified_state* state;
 	int* pattern;
@@ -49,22 +50,34 @@ pthread_mutex_t last_half_mutex;
  *
  * NOTE: assumes that "initial" has been malloced
  */
-void create_goal_state(struct simplified_state* initial){
+void create_goal_state(struct simplified_state* initial, int option){
 	//Reserve space for the array of pointers
 	initial->tiles = malloc(sizeof(int*)*N);
 
 	//For each pointer(row), reserve space
-	for(int i = 0; i < N; i++){
-		initial->tiles[i] = malloc(sizeof(int) * N);
+	for(int i = 0; i < N; i++){	
+		//Initialize each row with 0s
+		initial->tiles[i] = calloc(N, sizeof(int));
 	}
 
 	//Mathematically generate the needed numbers -- except for the very last one
 	int row, col;
-	for(int i = 0; i < N * N - 1; i++){
-		row = i / N;
-		col = i % N;
-		initial->tiles[row][col] = i+1;
-	}
+
+	//0 means generate the first N^2/2 numbers 
+	if(!option){
+		for(int i = 0; i < N * N / 2; i++){
+			row = i / N;
+			col = i % N;
+			initial->tiles[row][col] = i+1;
+		}
+	} else {
+		//Otherwise, generate the last half of the numbers
+		for(int i = N * N / 2; i < N*N; i++){
+			row = i / N;
+			col = i % N;
+			initial->tiles[row][col] = i+1;
+		}
+	}	
 
 	//The last number is always the 0 tile
 	initial->tiles[N-1][N-1] = 0;
@@ -93,6 +106,20 @@ void destroy_state(struct simplified_state* statePtr){
 
 	//Set to null as warning
 	statePtr = NULL;
+}
+
+
+/**
+ * A simple function that prints out a state
+ */
+void print_state(struct simplified_state* statePtr){
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			printf("%2d ", statePtr->tiles[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
 }
 
 
@@ -187,7 +214,7 @@ int swap(int row1, int column1, int row2, int column2, struct simplified_state* 
 	int swapped = statePtr->tiles[row2][column2];
 	//Put the temp in row2, column2
 	statePtr->tiles[row2][column2] = tile;
-
+	//Give the swapped tile value back for heuristic accuracy
 	return swapped;
 }
 
@@ -195,44 +222,53 @@ int swap(int row1, int column1, int row2, int column2, struct simplified_state* 
 /**
  * Move the 0 slider down by 1 row
  */
-void move_down(struct simplified_state* statePtr){
+int move_down(struct simplified_state* statePtr){
 	//Utilize the swap function, move the zero_row down by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr);	
+	int swapped = swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr);	
 	//Increment the zero_row to keep the position accurate
 	statePtr->zero_row++;
+	//Return the tile that was last swapped
+	return swapped;
 }
 
 
 /**
  * Move the 0 slider right by 1 column
  */
-void move_right(struct simplified_state* statePtr){
+int move_right(struct simplified_state* statePtr){
 	//Utilize the swap function, move the zero_column right by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr);	
+	int swapped = swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr);	
 	//Increment the zero_column to keep the position accurate
 	statePtr->zero_column++;
+	//Return the tile that was last swapped
+	return swapped;
 }
 
 
 /**
  * Move the 0 slider up by 1 row
  */
-void move_up(struct simplified_state* statePtr){
+int move_up(struct simplified_state* statePtr){
 	//Utilize the swap function, move the zero_row up by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr);	
+	int swapped = swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr);	
 	//Decrement the zero_row to keep the position accurate
 	statePtr->zero_row--;
+	//Return the tile that was last swapped
+	return swapped;
 }
 
 
 /**
  * Move the 0 slider left by 1 column
  */
-void move_left(struct simplified_state* statePtr){
+int move_left(struct simplified_state* statePtr){
 	//Utilize the swap function, move the zero_column left by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row , statePtr->zero_column-1, statePtr);	
+	int swapped = swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row , statePtr->zero_column-1, statePtr);	
 	//Decrement the zero_column to keep the position accurate
 	statePtr->zero_column--;
+	//Return the tile that was last swapped
+	return swapped;
+	
 }
 
 
@@ -301,7 +337,7 @@ void* generator_first_half_worker(void* moves){
 	//Always start at the goal state and work backwards
 	struct simplified_state* start = (struct simplified_state*)malloc(sizeof(struct simplified_state));
 	//Generate goal state mathematically
-	create_goal_state(start);
+	create_goal_state(start, 0);
 
 
 		//Create the pattern_cost struct
@@ -324,46 +360,51 @@ void* generator_first_half_worker(void* moves){
 						continue;
 					}
 
-					move_left(start);
-					
-			//		printf("%d %d\n", start->zero_row, start->zero_column);
-					start->lastMove = 0;
-					pc->cost++;
-				}
-
-				if(random_move == 1 && start->zero_column < N-1){
-					if(start->lastMove == 0){
-						moves--;
-						continue;
-					}
-
-					move_right(start);
-			//		printf("%d %d\n", start->zero_row, start->zero_column);
-					start->lastMove = 1;
-					pc->cost++;
-				} 
-			
-				if(random_move == 2 && start->zero_row < N-1){
-					if(start->lastMove == 3){
-						moves--;
-						continue;
-					}
-					move_down(start);
-			//		printf("%d %d\n", start->zero_row, start->zero_column);
-					start->lastMove = 2;
-					pc->cost++;
-				}
-
-				if(random_move == 3 && start->zero_row > 0){
-					if(start->lastMove == 2){
-						moves--;
-						continue;
-					}
-					move_up(start);
-			//		printf("%d %d\n", start->zero_row, start->zero_column);
-					start->lastMove = 3;
+				if(!move_left(start)){
 					pc->cost++;
 				}	
+					
+				start->lastMove = 0;
+			}
+
+			if(random_move == 1 && start->zero_column < N-1){
+				if(start->lastMove == 0){
+					moves--;
+					continue;
+				}
+
+				if(!move_right(start)){
+					pc->cost++;
+				}
+				
+				start->lastMove = 1;
+			} 
+			
+			if(random_move == 2 && start->zero_row < N-1){
+				if(start->lastMove == 3){
+					moves--;
+					continue;
+				}
+			
+				if(!move_down(start)){
+					pc->cost++;
+				}
+
+				start->lastMove = 2;
+			}
+
+			if(random_move == 3 && start->zero_row > 0){
+				if(start->lastMove == 2){
+					moves--;
+					continue;
+				}
+				
+				if(!move_up(start)){
+					pc->cost++;
+				}
+
+				start->lastMove = 3;
+			}	
 		}	
 
 		//Save the pattern in memory if it is not a repeat
@@ -388,7 +429,7 @@ void* generator_last_half_worker(void* moves){
 		//Always start at the goal state and work backwards
 		struct simplified_state* start = (struct simplified_state*)malloc(sizeof(struct simplified_state));
 		//Generate goal state mathematically
-		create_goal_state(start);
+		create_goal_state(start, 1);
 
 		//Create the pattern_cost struct
 		struct pattern_cost* pc = malloc(sizeof(struct pattern_cost));
@@ -410,44 +451,54 @@ void* generator_last_half_worker(void* moves){
 						continue;
 					}
 
-					move_left(start);
-					start->lastMove = 0;
+				if(!move_left(start)){
 					pc->cost++;
+				}	
+					
+				start->lastMove = 0;
+			}
+
+			if(random_move == 1 && start->zero_column < N-1){
+				if(start->lastMove == 0){
+					moves--;
+					continue;
 				}
 
-				if(random_move == 1 && start->zero_column < N-1){
-					if(start->lastMove == 0){
-						moves--;
-						continue;
-					}
-
-					move_right(start);
-					start->lastMove = 1;
+				if(!move_right(start)){
 					pc->cost++;
-				} 
+				}
+				
+				start->lastMove = 1;
+			} 
 			
-				if(random_move == 2 && start->zero_row < N-1){
-					if(start->lastMove == 3){
-						moves--;
-						continue;
-					}
-					move_down(start);
-					start->lastMove = 2;
+			if(random_move == 2 && start->zero_row < N-1){
+				if(start->lastMove == 3){
+					moves--;
+					continue;
+				}
+			
+				if(!move_down(start)){
 					pc->cost++;
 				}
 
-				if(random_move == 3 && start->zero_row > 0){
-					if(start->lastMove == 2){
-						moves--;
-						continue;
-					}
-					move_up(start);
-					start->lastMove = 3;
-					pc->cost++;
-				}		
-		}
+				start->lastMove = 2;
+			}
 
-		
+			if(random_move == 3 && start->zero_row > 0){
+				if(start->lastMove == 2){
+					moves--;
+					continue;
+				}
+				
+				if(!move_up(start)){
+					pc->cost++;
+				}
+
+				start->lastMove = 3;
+			}	
+		}	
+
+	
 		pthread_mutex_lock(&last_half_mutex);	
 		store_pattern(pc, 1);
 		pthread_mutex_unlock(&last_half_mutex);
@@ -468,10 +519,7 @@ void generate_patterns(int traceback_depth){
 		
 
 
-	for(int iter = 0; iter < 50000; iter++){			
-		printf("Still generating, currently generated %d unique patterns\n", num_unique_patterns);
-
-
+	for(int iter = 0; iter < 10; iter++){			
 		pthread_t threadArr[50];
 
 		//Store the threads in an array
@@ -489,11 +537,9 @@ void generate_patterns(int traceback_depth){
 			for(int i = 0; i < 25; i++){
 				pthread_join(threadArr[i], NULL);
 			}
-
-			
 		}
 
-
+		printf("Still generating, currently generated %d unique patterns\n", num_unique_patterns);
 	}
 }
 
@@ -553,19 +599,16 @@ int main(int argc, char** argv){
 	pthread_mutex_init(&last_half_mutex, NULL);
 	//Test
 	printf("Now generating database for %d puzzle problem\n", N);
-	generate_patterns(100);
+	generate_patterns(80);
 	printf("Success! Generated %d distinct patterns\n", num_unique_patterns);
 
-	while(patterns_first_half != NULL){
-		for(int i = 0; i < N; i++){
-			for(int j = 0; j < N; j++){
-				printf("%d ", patterns_first_half->state->tiles[i][j]);
-			}
-		};
-		printf("%d\n", patterns_first_half->cost);
-	//	fprintf(db, "%d\n", patterns->cost);
+	while(patterns_last_half != NULL){
+		print_state(patterns_last_half->state);		
+
+		printf("Cost: %d\n\n", patterns_last_half->cost);
+		//	fprintf(db, "%d\n", patterns->cost);
 		
-		patterns_first_half = patterns_first_half->next;
+		patterns_last_half = patterns_last_half->next;
 	}
 
 
