@@ -443,7 +443,7 @@ void generate_patterns(int max_moves){
 
 	pthread_t threadArr[50];
 
-	for(int iter = 0; iter < 2; iter++){			
+	for(int iter = 0; iter < 100; iter++){			
 
 		//Store the threads in an array
 		for(int moves = 10; moves < max_moves; moves++){
@@ -532,11 +532,11 @@ int main(int argc, char** argv){
 
 	while(patterns_first_half != NULL){
 	
-		for(int i = 0; i < patterns_first_half->pattern_length; i++){
-			printf("%2d ", patterns_first_half->pattern[i]);
-		}
+//		for(int i = 0; i < patterns_first_half->pattern_length; i++){
+//			printf("%2d ", patterns_first_half->pattern[i]);
+//		}
 
-		printf(", Cost: %d\n\n", patterns_first_half->cost);
+//		printf(", Cost: %d\n\n", patterns_first_half->cost);
 		//	fprintf(db, "%d\n", patterns->cost);
 		
 		patterns_first_half = patterns_first_half->next;
