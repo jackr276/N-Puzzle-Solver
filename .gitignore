@@ -1,3 +1,7 @@
 src/generate_start_config
 src/solve
 src/solve_multi_threaded
+src/pattern_databases/*.patterndb
+src/pattern_databases/solve_pattern_db
+src/pattern_databases/generate_pattern_db
+src/pattern_databases/a.out
