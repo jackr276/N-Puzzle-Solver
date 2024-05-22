@@ -9,8 +9,10 @@
 #include <time.h>
 #include <pthread.h>
 
+
 //Define a global variable for the value of N
 int N;
+
 
 //Define a simplified state struct for the generation process. We only need the tiles and zero_row and column
 struct simplified_state{
@@ -78,6 +80,7 @@ void create_goal_state(struct simplified_state* initial, int option){
 		}
 	} else {
 		//Otherwise, generate the last half of the numbers
+		//Note: Last pattern has N^2 - 1 numbers, 0 never counts
 		for(int i = N * N / 2; i < N*N; i++){
 			row = i / N;
 			col = i % N;
@@ -161,7 +164,8 @@ void generate_pattern_from_state(struct pattern_cost* patternPtr, struct simplif
 					//Example: If tile 1 is at position 8, we store [8] in the 0 spot of the array
 					patternPtr->pattern[tile - 1] = i * N + j;
 				} else {
-					patternPtr->pattern[tile - (N*N / 2)] = i * N + j;	
+					//9 should be at 0 spot
+					patternPtr->pattern[tile - (N*N / 2) - 1] = i * N + j;	
 				}
 			}
 		}
@@ -328,7 +332,7 @@ void* generator_worker(void* thread_params){
 			pc->pattern_length = (N * N / 2) - 1;
 		}
 		
-		pc->pattern = malloc(sizeof(int) * pc->pattern_length);
+		pc->pattern = calloc(sizeof(int), pc->pattern_length);
 
 		//We are at the goal state, so no cost yet
 		pc->cost = 0;
@@ -443,10 +447,10 @@ void generate_patterns(int max_moves){
 
 	pthread_t threadArr[50];
 
-	for(int iter = 0; iter < 100; iter++){			
+	for(int iter = 0; iter < 1; iter++){			
 
 		//Store the threads in an array
-		for(int moves = 10; moves < max_moves; moves++){
+		for(int moves = 50; moves < max_moves; moves++){
 
 			for(int i = 0; i < 25; i++){
 				pthread_create(&threadArr[i], NULL, generator_worker, parameters1);	
@@ -489,6 +493,33 @@ void generate_patterns(int max_moves){
 
  *******************************************************************************************/
 
+void convert_back_to_state(struct pattern_cost* patternPtr){
+	int row, col;
+			
+}
+
+
+/**
+ * Iterate over the given linked list, saving to the database line by line
+ */
+void save_to_database(FILE* database, struct pattern_cost* pattern_linked_list){
+	struct pattern_cost* cursor = pattern_linked_list;
+
+	while(cursor != NULL){
+		//Very first thing on each line is the pattern type
+		fprintf(database, "%d ", pattern_linked_list->pattern_type);
+		//Next we print the cost
+		fprintf(database, "%d ", cursor->cost);
+		//Next is the pattern encoded in the way we've described
+		for(int i = 0; i < cursor->pattern_length; i++){
+			fprintf(database, "%d ", cursor->pattern[i]);
+		}
+		//Print a newline for delimiting
+		fprintf(database, "\n");
+		//Advance the pointer
+		cursor = cursor->next;
+	}
+}
 
 
 int main(int argc, char** argv){
@@ -516,12 +547,14 @@ int main(int argc, char** argv){
 	}
 
 
-	//Filename is always of format "N_G.patterndb"
-	char db_filename[14];
+	//Filename is always of format "N.patterndb"
+	char db_filename[13];
 
 	//Save the filename into a string
 	sprintf(db_filename, "%d.patterndb", N);
 
+	//Open the file for writing
+	FILE* database = fopen(db_filename, "w");
 
 	pthread_mutex_init(&first_half_lock, NULL);
 	pthread_mutex_init(&last_half_lock, NULL);
@@ -530,23 +563,32 @@ int main(int argc, char** argv){
 	generate_patterns(80);
 	printf("Success! Generated %d distinct patterns\n", num_unique_patterns);
 
-	while(patterns_first_half != NULL){
+	/*
+	while(patterns_last_half != NULL){
 	
-//		for(int i = 0; i < patterns_first_half->pattern_length; i++){
-//			printf("%2d ", patterns_first_half->pattern[i]);
-//		}
+		for(int i = 0; i < patterns_last_half->pattern_length; i++){
+			printf("%2d ", patterns_last_half->pattern[i]);
+		}
 
-//		printf(", Cost: %d\n\n", patterns_first_half->cost);
+		convert_back_to_state(patterns_last_half);
+
+		printf(", Cost: %d\n\n", patterns_last_half->cost);
 		//	fprintf(db, "%d\n", patterns->cost);
 		
-		patterns_first_half = patterns_first_half->next;
+		patterns_last_half = patterns_last_half->next;
 	}
 
-
+	*/
 
 	pthread_mutex_destroy(&first_half_lock);
 	pthread_mutex_destroy(&last_half_lock);
 
 	printf("Saving to database file: %s\n\n", db_filename);
+
+	//Save everything into the database
+	save_to_database(database, patterns_first_half);
+	save_to_database(database, patterns_last_half);
+	//Close file when done
+	fclose(database);
 	return 0;
 }
