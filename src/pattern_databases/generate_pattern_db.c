@@ -447,7 +447,7 @@ void generate_patterns(int max_moves){
 
 	pthread_t threadArr[50];
 
-	for(int iter = 0; iter < 1; iter++){			
+	for(int iter = 0; iter < 50; iter++){			
 
 		//Store the threads in an array
 		for(int moves = 50; moves < max_moves; moves++){
@@ -473,29 +473,6 @@ void generate_patterns(int max_moves){
 	//Be sure to deallocate when done
 	free(parameters1);
 	free(parameters2);
-}
-
-/********************************************************************************************
- * Basic Idea: Store some pattern and how many moves it takes to go from that pattern to goal
- * Encoding Format -> attempt to minimize space usage
- * Idea: there are 16 positions on the board, numbers are 0-15
- * --- NUMBER POSITION -----
- *   	ROW_POSITION . . . .   MOVES_FROM_GOAL 
- * With this, we can identify the 
- *
- * So for Example:
- * 1  2  3  4 
- * 5  6  7  8 
- * 0  0  0  0  
- * 0  0  0  0
- * Can be encoded as
- * 0 1 2 3 4 5 6 7 0 
-
- *******************************************************************************************/
-
-void convert_back_to_state(struct pattern_cost* patternPtr){
-	int row, col;
-			
 }
 
 
@@ -530,9 +507,6 @@ int main(int argc, char** argv){
 		return 0;
 	}
 
-	//Which group size do we want to generate patterns for
-	int group_size;
-
 	//Get the N and G value from the user for which database that they want to generate 
 	if(sscanf(argv[1], "%d", &N) != 1){	
 		printf("Incorrect type of program arguments.\n");
@@ -560,26 +534,11 @@ int main(int argc, char** argv){
 	pthread_mutex_init(&last_half_lock, NULL);
 	//Test
 	printf("Now generating database for %d puzzle problem\n", N);
+	//Currently optimized for 15 puzzle
 	generate_patterns(80);
 	printf("Success! Generated %d distinct patterns\n", num_unique_patterns);
 
-	/*
-	while(patterns_last_half != NULL){
-	
-		for(int i = 0; i < patterns_last_half->pattern_length; i++){
-			printf("%2d ", patterns_last_half->pattern[i]);
-		}
-
-		convert_back_to_state(patterns_last_half);
-
-		printf(", Cost: %d\n\n", patterns_last_half->cost);
-		//	fprintf(db, "%d\n", patterns->cost);
-		
-		patterns_last_half = patterns_last_half->next;
-	}
-
-	*/
-
+	//Remove the two mutexes
 	pthread_mutex_destroy(&first_half_lock);
 	pthread_mutex_destroy(&last_half_lock);
 
@@ -590,5 +549,7 @@ int main(int argc, char** argv){
 	save_to_database(database, patterns_last_half);
 	//Close file when done
 	fclose(database);
+
+	printf("Success!\n");
 	return 0;
 }

@@ -13,8 +13,10 @@
 #include <time.h>
 
 
+/*=================================== Global Variables and Structures ============================================================ */
+
 /**
- * Defines a type of state, which is a structure, that represents a configuration in the gem puzzle game
+ * Define a type of state, which is a structure, that represents a configuration in the gem puzzle game
  */
 struct state {
 	//Define a dynamic 2D array for the tiles since we have a variable puzzle size
@@ -29,6 +31,7 @@ struct state {
 	struct state* predecessor;			
 };
 
+
 //Define a self referential struct to store a pattern and a cost. The pattern is what we really care about here
 struct pattern_cost{
 	int* pattern;
@@ -40,7 +43,6 @@ struct pattern_cost{
 };
 
 
-/* The following global variables are defined for convenience */
 //N is the NxN size of the puzzle, defined by the user
 int N;
 //Keep track of how many unique configs we've created
@@ -53,10 +55,44 @@ struct state* fringe = NULL;
 //Closed is a linked list containing all sets previously examined. This is used to avoid repeating
 struct state* closed = NULL;
 //Keep track of patterns from the database
-struct pattern_cost* patterns = NULL;
+struct pattern_cost* patterns_first_half = NULL;
+struct pattern_cost* patterns_last_half = NULL;
 //Every time a state is expanded, at most 4 successor states will be created
 struct state* succ_states[4];
-/* ========================================================== */
+/* ===================================================================================================================================== */
+
+
+/**
+ * Before we can do anything, we must read the entire pattern database into memory
+ */
+int read_pattern_db(char* database){
+	//Open the database for reading
+	FILE* db = fopen(database, "r");	
+	
+	//If this fails, let main() know that the entire program must be aborted
+	if(db == NULL){
+		return 1;
+	}
+
+	//Make
+
+	char* line;
+	int lineLength;
+	size_t line_buffer_size;
+
+	struct pattern_cost* cursor = patterns;
+	struct pattern_cost* new_node;
+
+	while((lineLength = getline(&line, &line_buffer_size, db)) > 0)	{
+		
+	}	
+	
+
+
+	//If we get here, everything went well so close the db and return 0
+	fclose(db);
+	return 0;
+}
 
 
 /**
@@ -622,23 +658,29 @@ int main(int argc, char** argv){
 	//If the user put in a non-integer or nonpositive integer, print an error
 	if(sscanf(argv[1], "%d", &N) != 1 || N < 1){
 		printf("Incorrect type of program arguments.\n");
-		printf("Usage: ./solve <N> <n0. . .nN>\n");
-		printf("Where <N> is the number of rows/columns, followed by the matrix in row-major order.\n\n");
+		printf("Usage: ./solve <N> <Database File> <n0. . .nN>\n");
+		printf("Where <N> is the number of rows/columns and <Database File> is the pattern database, followed by the matrix in row-major order.\n\n");
 		return 1;
 	}
 
 	//Check if the number of arguments is correct. If not, exit the program and print an error
-	if(argc != N*N + 2){
+	if(argc != N*N + 3){
 		//Give an error message
 		printf("Incorrect number of program arguments.\n");
-		printf("Usage: ./solve <N> <n0. . .nN>\n");
-		printf("Where <N> is the number of rows/columns, followed by the matrix in row-major order.\n\n");
+		printf("Usage: ./solve <N> <Database File> <n0. . .nN>\n");
+		printf("Where <N> is the number of rows/columns and <Database File> is the pattern database, followed by the matrix in row-major order.\n\n");
 		return 1;
 	}
 
-	//Important: Move the address of argv up by 1 so that initialize_start_goal can only see the initial config 
-	argv += 1;
+	//Now we must read the entire pattern database into memory
+	if(read_pattern_db(argv[2])){
+		printf("ERROR. Pattern database %s not found. Program will exit.\n", argv[2]);
+		return 1;
+	}
 
+	//Important: Move the address of argv up by 2 so that initialize_start_goal can only see the initial config 
+	argv += 2;
+	
 	//Initialize the goal and start states 
 	initialize_start_goal(argv);
 	//Call the solve() funciton and hand off the rest of the program execution to it
