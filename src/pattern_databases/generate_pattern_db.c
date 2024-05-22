@@ -25,8 +25,8 @@ struct simplified_state{
 
 //Define a self referential struct to store a pattern and a cost. The pattern is what we really care about here
 struct pattern_cost{
-	struct simplified_state* state;
 	int* pattern;
+	int pattern_length;
 	int cost;
 	//0 = first half, 1  = last half
 	int pattern_type;
@@ -132,24 +132,40 @@ void print_state(struct simplified_state* statePtr){
 /**
  * Define a simple function that checks if two states are identical for use in contained_in_db
  */
-int states_same(struct simplified_state* statePtr1, struct simplified_state* statePtr2){
+int patterns_same(int* pattern1, int* pattern2, int length){
 	//Compare tile by tile
-	for(int i = 0; i < N; i++){
-		for(int j = 0; j < N; j++){
-			//If we find any difference, return false
-			if(statePtr1->tiles[i][j] != statePtr2->tiles[i][j]){
-				return 0;
-			}	
-		}
+	for(int i = 0; i < length; i++){
+		if(pattern1[i] != pattern2[i]){
+			return 0;
+		}	
 	}
 	
 	//Return 1 because they are the same
 	return 1;
 }
 
+/**
+ * Takes in a state and translates/compresses the 2D array into a 1D array with only the information that we care about
+ */
+void generate_pattern_from_state(struct pattern_cost* patternPtr, struct simplified_state* statePtr){
+	int tile;
 
-void generate_pattern_from_state(struct pattern_cost* patternPtr){
-
+	int pattern_type = patternPtr->pattern_type;
+	//Generation for the first pattern type
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			//If we have a pattern tile
+			if((tile = statePtr->tiles[i][j]) != 0){	
+				if(!pattern_type){
+					//We store the index of the tile in the pattern at tile location - 1
+					//Example: If tile 1 is at position 8, we store [8] in the 0 spot of the array
+					patternPtr->pattern[tile - 1] = i * N + j;
+				} else {
+					patternPtr->pattern[tile - (N*N / 2)] = i * N + j;	
+				}
+			}
+		}
+	}	
 }
 
 
@@ -180,7 +196,7 @@ int store_pattern(struct pattern_cost* patternPtr){
 
 	//Iterate through the entire linked list
 	while(cursor->next != NULL){
-		if(states_same(cursor->state, patternPtr->state)){
+		if(patterns_same(patternPtr->pattern, cursor->pattern, patternPtr->pattern_length)){
 			//Two options here
 			if(patternPtr->cost < cursor->cost){
 				//We must always store the lowest possible cost, so change it if we find this
@@ -188,9 +204,8 @@ int store_pattern(struct pattern_cost* patternPtr){
 			}
 			
 			//PatternPtr was a repeat, and is useless
-			//Free the statePtr in patternPtr
-			destroy_state(patternPtr->state);
 			//Free the pointer
+			free(patternPtr->pattern);
 			free(patternPtr);
 			//Set to NULL as a warning
 			patternPtr = NULL;
@@ -306,7 +321,15 @@ void* generator_worker(void* thread_params){
 		//Create the pattern_cost struct
 		struct pattern_cost* pc = (struct pattern_cost*)malloc(sizeof(struct pattern_cost));
 		//Point the pattern of pc to the newly made start state
-		pc->state = start;
+	
+		if(!pattern_type){
+			pc->pattern_length = N * N / 2;	
+		} else {
+			pc->pattern_length = (N * N / 2) - 1;
+		}
+		
+		pc->pattern = malloc(sizeof(int) * pc->pattern_length);
+
 		//We are at the goal state, so no cost yet
 		pc->cost = 0;
 		//Set the pattern type appropriately
@@ -371,7 +394,13 @@ void* generator_worker(void* thread_params){
 				start->lastMove = 3;
 			}	
 		}
+
+		//Translate the state into a pattern
+		generate_pattern_from_state(pc, start);
+		//Save into the write buffer
 		write_buffer[i] = pc;
+		//Destroy the state as its no longer needed
+		destroy_state(start);
 	}
 
 	//Store patterns from write buffer
@@ -414,7 +443,7 @@ void generate_patterns(int max_moves){
 
 	pthread_t threadArr[50];
 
-	for(int iter = 0; iter < 100; iter++){			
+	for(int iter = 0; iter < 2; iter++){			
 
 		//Store the threads in an array
 		for(int moves = 10; moves < max_moves; moves++){
@@ -501,13 +530,16 @@ int main(int argc, char** argv){
 	generate_patterns(80);
 	printf("Success! Generated %d distinct patterns\n", num_unique_patterns);
 
-	while(patterns_last_half != NULL){
-		print_state(patterns_last_half->state);		
+	while(patterns_first_half != NULL){
+	
+		for(int i = 0; i < patterns_first_half->pattern_length; i++){
+			printf("%2d ", patterns_first_half->pattern[i]);
+		}
 
-		printf("Cost: %d\n\n", patterns_last_half->cost);
+		printf(", Cost: %d\n\n", patterns_first_half->cost);
 		//	fprintf(db, "%d\n", patterns->cost);
 		
-		patterns_last_half = patterns_last_half->next;
+		patterns_first_half = patterns_first_half->next;
 	}
 
 
