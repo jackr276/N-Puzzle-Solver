@@ -66,7 +66,9 @@ struct state* succ_states[4];
  * Before we can do anything, we must read the entire pattern database into memory
  */
 int read_pattern_db(char* database){
-	//Open the database for reading
+	struct pattern_cost* new_node;
+
+	//Open the database up for reading
 	FILE* db = fopen(database, "r");	
 	
 	//If this fails, let main() know that the entire program must be aborted
@@ -77,14 +79,53 @@ int read_pattern_db(char* database){
 	//Make
 
 	char* line;
+	char* token;
 	int lineLength;
 	size_t line_buffer_size;
 
-	struct pattern_cost* cursor = patterns;
-	struct pattern_cost* new_node;
-
+	//Grab each line in the file
 	while((lineLength = getline(&line, &line_buffer_size, db)) > 0)	{
+		//Reserve space for the new node
+		new_node = malloc(sizeof(struct pattern_cost));
+
+		//Grab tokens delimited by spaces
+		token = strtok(line, " ");
 		
+		//The first integer is always the pattern type
+		//Read the token as an int and place it in pattern_type
+		sscanf(token, "%d", &new_node->pattern_type);		
+
+		//Use the pattern length to allocate enough space
+		if(!new_node->pattern_type){
+			new_node->pattern_length = N * N / 2;	
+			//We may as well attach to the linked list while we're here
+			new_node->next = patterns_first_half;
+			//Set the head to be the new node
+			patterns_first_half = new_node;
+		} else {
+			new_node->pattern_length = (N * N / 2) - 1;
+			//We may as well attach to the linked list while we're here
+			new_node->next = patterns_last_half;
+			//Set the head to be the new node
+			patterns_last_half = new_node;
+		}
+
+		//Reserve space for the pattern
+		new_node->pattern = calloc(sizeof(int), new_node->pattern_length);
+
+		//Get the next token
+		token = strtok(NULL, " ");
+
+		//The cost of the pattern always comes next
+		sscanf(token,  "%d", &new_node->cost);
+
+		//Now we read in the pattern int by int
+		for(int i = 0; i < new_node->pattern_length; i++){
+			//Get the next token
+			token = strtok(NULL, " ");
+			//Place it into the pattern array
+			sscanf(token, "%d", new_node->pattern + i);
+		}
 	}	
 	
 

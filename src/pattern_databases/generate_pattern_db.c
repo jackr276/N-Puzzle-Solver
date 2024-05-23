@@ -447,7 +447,7 @@ void generate_patterns(int max_moves){
 
 	pthread_t threadArr[50];
 
-	for(int iter = 0; iter < 6; iter++){			
+	for(int iter = 0; iter < 20; iter++){			
 
 		//Store the threads in an array
 		for(int moves = 10; moves < max_moves; moves++){
@@ -530,10 +530,11 @@ int main(int argc, char** argv){
 	pthread_mutex_init(&first_half_lock, NULL);
 	pthread_mutex_init(&last_half_lock, NULL);
 	//Test
-	printf("Now generating database for %d puzzle problem\n", N);
+	printf("--------------------------------------------------\n");
+	printf("Now generating database for %d puzzle problem\n\n", N);
 	//Currently optimized for 15 puzzle
 	generate_patterns(80);
-	printf("Success! Generated %d distinct patterns\n", num_unique_patterns);
+	printf("\nSuccess! Generated %d distinct patterns\n", num_unique_patterns);
 
 	//Remove the two mutexes
 	pthread_mutex_destroy(&first_half_lock);
@@ -551,6 +552,6 @@ int main(int argc, char** argv){
 	//Close file when done
 	fclose(database);
 
-	printf("Success!\n");
+	printf("------------------ Success! -----------------------\n");
 	return 0;
 }
