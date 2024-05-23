@@ -447,7 +447,7 @@ void generate_patterns(int max_moves){
 
 	pthread_t threadArr[50];
 
-	for(int iter = 0; iter < 20; iter++){			
+	for(int iter = 0; iter < 6; iter++){			
 
 		//Store the threads in an array
 		for(int moves = 10; moves < max_moves; moves++){
@@ -527,9 +527,6 @@ int main(int argc, char** argv){
 	//Save the filename into a string
 	sprintf(db_filename, "%d.patterndb", N);
 
-	//Open the file for writing
-	FILE* database = fopen(db_filename, "w");
-
 	pthread_mutex_init(&first_half_lock, NULL);
 	pthread_mutex_init(&last_half_lock, NULL);
 	//Test
@@ -543,6 +540,10 @@ int main(int argc, char** argv){
 	pthread_mutex_destroy(&last_half_lock);
 
 	printf("Saving to database file: %s\n\n", db_filename);
+
+	//Open the file for writing
+	FILE* database = fopen(db_filename, "w");
+
 
 	//Save everything into the database
 	save_to_database(database, patterns_first_half);
