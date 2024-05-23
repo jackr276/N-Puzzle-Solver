@@ -447,10 +447,10 @@ void generate_patterns(int max_moves){
 
 	pthread_t threadArr[50];
 
-	for(int iter = 0; iter < 50; iter++){			
+	for(int iter = 0; iter < 20; iter++){			
 
 		//Store the threads in an array
-		for(int moves = 50; moves < max_moves; moves++){
+		for(int moves = 10; moves < max_moves; moves++){
 
 			for(int i = 0; i < 25; i++){
 				pthread_create(&threadArr[i], NULL, generator_worker, parameters1);	
