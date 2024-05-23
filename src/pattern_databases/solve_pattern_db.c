@@ -15,6 +15,7 @@
 
 /*=================================== Global Variables and Structures ============================================================ */
 
+
 /**
  * Define a type of state, which is a structure, that represents a configuration in the gem puzzle game
  */
@@ -71,6 +72,7 @@ void read_pattern_db(FILE* database){
 	//We will use the new_node as our holder for reading the database in
 	struct pattern_cost* new_node;
 	int MAXLENGTH = 1000;
+	int num_patterns_loaded = 0;
 
 	//Declare lines, tokens and buffer sizes for line reading
 	char line[1000];
@@ -119,7 +121,12 @@ void read_pattern_db(FILE* database){
 			//Place it into the pattern array
 			sscanf(token, "%d", new_node->pattern + i);
 		}
-	}	
+
+		//We've loaded one more pattern
+		num_patterns_loaded++;
+	}
+
+	printf("\nSuccessfully loaded %d patterns into memory\n", num_patterns_loaded);
 }
 
 
@@ -437,18 +444,12 @@ void update_prediction_function(int i){
 			}
 
 			//Manhattan distance is the absolute value of the x distance and the y distance
-			manhattan_distance += abs(i - goal_rowCor) + abs(j - goal_colCor);	
+			manhattan_distance = abs(i - goal_rowCor) + abs(j - goal_colCor);	
 		
 			//Add manhattan distance for each tile
-			//statePtr->heuristic_cost += manhattan_distance;
+			statePtr->heuristic_cost += manhattan_distance;
 		}
 	}
-
-	//We don't need to do a database search at all for this
-	if(manhattan_distance < 20){
-		statePtr->heuristic_cost = manhattan_distance;
-	} else {	
-
 
 	/**
 	 * We will now attempt to find pattern matches for this state in the precomputed pattern database, which
@@ -468,14 +469,8 @@ void update_prediction_function(int i){
 	generate_pattern_from_state(first_half, statePtr);
 	generate_pattern_from_state(last_half, statePtr);
 
-	database_cost = get_cost_from_db(first_half) + get_cost_from_db(last_half);
-
-	if(database_cost < manhattan_distance){
-		statePtr->heuristic_cost = database_cost;
-	} else {
-		statePtr->heuristic_cost = manhattan_distance;
-	}
-	}
+	statePtr->heuristic_cost += get_cost_from_db(first_half) + get_cost_from_db(last_half);
+	
 	//Once we have the heuristic_cost, update the total_cost
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
 }
