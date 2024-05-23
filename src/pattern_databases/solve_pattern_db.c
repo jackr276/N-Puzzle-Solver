@@ -65,26 +65,17 @@ struct state* succ_states[4];
 /**
  * Before we can do anything, we must read the entire pattern database into memory
  */
-int read_pattern_db(char* database){
+void read_pattern_db(FILE* database){
+	//We will use the new_node as our holder for reading the database in
 	struct pattern_cost* new_node;
+	int MAXLENGTH = 1000;
 
-	//Open the database up for reading
-	FILE* db = fopen(database, "r");	
-	
-	//If this fails, let main() know that the entire program must be aborted
-	if(db == NULL){
-		return 1;
-	}
-
-	//Make
-
-	char* line;
+	//Declare lines, tokens and buffer sizes for line reading
+	char line[1000];
 	char* token;
-	int lineLength;
-	size_t line_buffer_size;
 
 	//Grab each line in the file
-	while((lineLength = getline(&line, &line_buffer_size, db)) > 0)	{
+	while(fgets(line, MAXLENGTH,  database) != NULL)	{
 		//Reserve space for the new node
 		new_node = malloc(sizeof(struct pattern_cost));
 
@@ -127,12 +118,6 @@ int read_pattern_db(char* database){
 			sscanf(token, "%d", new_node->pattern + i);
 		}
 	}	
-	
-
-
-	//If we get here, everything went well so close the db and return 0
-	fclose(db);
-	return 0;
 }
 
 
@@ -713,11 +698,22 @@ int main(int argc, char** argv){
 		return 1;
 	}
 
-	//Now we must read the entire pattern database into memory
-	if(read_pattern_db(argv[2])){
+	//Open the file
+	FILE* db = fopen(argv[2], "r");
+
+	//If we failed at opening the file, let the user know and exit
+	if(db == NULL){
 		printf("ERROR. Pattern database %s not found. Program will exit.\n", argv[2]);
 		return 1;
 	}
+
+	//Read the pattern database in
+	read_pattern_db(db);
+
+	//Close when done
+	fclose(db);
+
+	printf("Pattern database read successfully! Solver will now begin searching.\n");
 
 	//Important: Move the address of argv up by 2 so that initialize_start_goal can only see the initial config 
 	argv += 2;
