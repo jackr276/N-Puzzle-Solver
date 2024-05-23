@@ -447,7 +447,7 @@ void generate_patterns(int max_moves){
 
 	pthread_t threadArr[50];
 
-	for(int iter = 0; iter < 2; iter++){			
+	for(int iter = 0; iter < 5; iter++){			
 
 		//Store the threads in an array
 		for(int moves = 10; moves < max_moves; moves++){

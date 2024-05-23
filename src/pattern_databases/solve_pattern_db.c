@@ -445,7 +445,7 @@ void update_prediction_function(int i){
 	}
 
 	//We don't need to do a database search at all for this
-	if(manhattan_distance < 10){
+	if(manhattan_distance < 20){
 		statePtr->heuristic_cost = manhattan_distance;
 	} else {	
 
