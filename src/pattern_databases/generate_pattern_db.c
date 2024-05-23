@@ -319,7 +319,6 @@ int move_left(struct simplified_state* statePtr){
 	statePtr->zero_column--;
 	//Return the tile that was last swapped
 	return swapped;
-	
 }
 
 
@@ -347,14 +346,16 @@ void* generator_worker(void* thread_params){
 		//Generate goal state mathematically
 		create_goal_state(start, pattern_type);
 
-
 		//Create the pattern_cost struct
 		struct pattern_cost* pc = (struct pattern_cost*)malloc(sizeof(struct pattern_cost));
 		//Point the pattern of pc to the newly made start state
-	
+
+		//Determine the pattern_length by type
 		if(!pattern_type){
+			//The first_half pattern stores the first N*N/2 tiles
 			pc->pattern_length = N * N / 2;	
 		} else {
+			//The last_half pattern store the last N*N/2 tiles, because the 0 tile doesn't count
 			pc->pattern_length = (N * N / 2) - 1;
 		}
 		
@@ -365,6 +366,9 @@ void* generator_worker(void* thread_params){
 		//Set the pattern type appropriately
 		pc->pattern_type = pattern_type;
 
+		//Store the value of the tile that was moved
+		int moved_tile = 0;
+
 		//Now to generate a pattern randomly, perform i random moves on start
 		for(int moves = 10; moves < max_moves; moves++){
 			//Get a random move between 0 and 3
@@ -373,56 +377,56 @@ void* generator_worker(void* thread_params){
 			//Every time we successfully make a random move, we've moved one more away from the goal, so increment cost
 			//Move left if possible and random_move is 0
 			if(random_move == 0 && start->zero_column > 0){
+				//If the last move we did was 1, we'd be undoing all of our work, so we will skip this
 				if(start->lastMove == 1){
-					moves--;
+				//	moves--;
 					continue;
 				}
-
-				if(move_left(start)){
-					pc->cost++;
-				}	
-				
-				start->lastMove = 0;
+			
+				//Move the tile left and store what was moved
+				moved_tile = move_left(start);
 			}
 
 			if(random_move == 1 && start->zero_column < N-1){
+				//If the last move we did was 0, we'd be undoing all of our work, so we will skip this
 				if(start->lastMove == 0){
-					moves--;
+				//	moves--;
 					continue;
 				}
-
-				if(move_right(start)){
-					pc->cost++;
-				}
 				
-				start->lastMove = 1;
+				//Move the tile right and store what was moved
+				moved_tile = move_right(start);
 			} 
 			
 			if(random_move == 2 && start->zero_row < N-1){
+				//If the last move we did was 3, we'd be undoing all of our work, so we will skip this
 				if(start->lastMove == 3){
-					moves--;
-					continue;
-				}
-			
-				if(move_down(start)){
-					pc->cost++;
-				}
-
-				start->lastMove = 2;
-			}
-
-			if(random_move == 3 && start->zero_row > 0){
-				if(start->lastMove == 2){
-					moves--;
+				//	moves--;
 					continue;
 				}
 				
-				if(move_up(start)){
-					pc->cost++;
-				}
+				//Move the tile down and store what was moved
+				moved_tile = move_down(start);
+			}
 
-				start->lastMove = 3;
-			}	
+			if(random_move == 3 && start->zero_row > 0){
+				//If the last move we did was 2, we'd be undoing all of our work, so we will skip this
+				if(start->lastMove == 2){
+				//	moves--;
+					continue;
+				}
+				
+				//Move the tile up and store what was moved
+				moved_tile = move_up(start);
+			}
+
+			//Set this flag to alert the next iteration
+			start->lastMove = random_move;
+
+			//If the tile we moved is not 0, increase the cost
+			if(moved_tile != 0){
+				pc->cost++;
+			}
 		}
 
 		//Translate the state into a pattern
@@ -471,28 +475,29 @@ void generate_patterns(int max_moves){
 	parameters1->pattern_type = 0;
 	parameters2->pattern_type = 1;
 
+	//For each run, we will use 50 threads
 	pthread_t threadArr[50];
 
-	for(int iter = 0; iter < 5; iter++){			
-
-		//Store the threads in an array
+	//Each thread will run 20 times
+	for(int iter = 0; iter < 5; iter++){
 		for(int moves = 10; moves < max_moves; moves++){
-
+			//The first 25 threads will deal with the first half pattern
 			for(int i = 0; i < 25; i++){
 				pthread_create(&threadArr[i], NULL, generator_worker, parameters1);	
 			}
 
-
+			//Last 25 threads will deal with the last half pattern	
 			for(int i = 25; i < 50; i++){	
 				pthread_create(&threadArr[i], NULL, generator_worker, parameters2);
 			}
-		
-
+	
+			//Wait for all threads to finish at this point
 			for(int i = 0; i < 50; i++){
 				pthread_join(threadArr[i], NULL);
 			}
 		}
 
+		//Sanity check print for the user
 		printf("Still generating, currently generated %d unique patterns\n", num_unique_patterns);
 	}
 	
@@ -506,6 +511,7 @@ void generate_patterns(int max_moves){
  * Iterate over the given linked list, saving to the database line by line
  */
 void save_to_database(FILE* database, struct pattern_cost* pattern_linked_list){
+	//Define a cursor to avoid messing with the head reference
 	struct pattern_cost* cursor = pattern_linked_list;
 
 	while(cursor != NULL){
@@ -525,6 +531,9 @@ void save_to_database(FILE* database, struct pattern_cost* pattern_linked_list){
 }
 
 
+/**
+ * The main function simply handles input and makes calls to the appropriate functions
+ */
 int main(int argc, char** argv){
 	//Check to ensure proper number of arguments
 	if(argc < 2){
