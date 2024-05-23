@@ -417,7 +417,7 @@ void update_prediction_function(int i){
 	//Declare all needed variables
 	int selected_num, goal_rowCor, goal_colCor;
 	//Keep track of the manhattan distance
-	int manhattan_distance;
+	int manhattan_distance = 0;
 	
 	//Go through each tile in the state and calculate the heuristic_cost
 	for(int i = 0; i < N; i++){
@@ -437,12 +437,17 @@ void update_prediction_function(int i){
 			}
 
 			//Manhattan distance is the absolute value of the x distance and the y distance
-			manhattan_distance = abs(i - goal_rowCor) + abs(j - goal_colCor);	
+			manhattan_distance += abs(i - goal_rowCor) + abs(j - goal_colCor);	
 		
 			//Add manhattan distance for each tile
-			statePtr->heuristic_cost += manhattan_distance;
+			//statePtr->heuristic_cost += manhattan_distance;
 		}
 	}
+
+	//We don't need to do a database search at all for this
+	if(manhattan_distance < 10){
+		statePtr->heuristic_cost = manhattan_distance;
+	} else {	
 
 
 	/**
@@ -450,6 +455,8 @@ void update_prediction_function(int i){
 	 * has already been read into memory. To do this, we'll need to convert our state into a pattern, and
 	 * then traverse the database to see if there are any matches
 	 */
+
+	int database_cost;
 	//Decare 2 patterns that we will be using
 	struct pattern_cost* first_half = malloc(sizeof(struct pattern_cost));
 	struct pattern_cost* last_half = malloc(sizeof(struct pattern_cost));
@@ -461,8 +468,14 @@ void update_prediction_function(int i){
 	generate_pattern_from_state(first_half, statePtr);
 	generate_pattern_from_state(last_half, statePtr);
 
-	statePtr->heuristic_cost += get_cost_from_db(first_half) + get_cost_from_db(last_half);
+	database_cost = get_cost_from_db(first_half) + get_cost_from_db(last_half);
 
+	if(database_cost < manhattan_distance){
+		statePtr->heuristic_cost = database_cost;
+	} else {
+		statePtr->heuristic_cost = manhattan_distance;
+	}
+	}
 	//Once we have the heuristic_cost, update the total_cost
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
 }

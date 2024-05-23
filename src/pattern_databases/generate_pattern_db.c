@@ -352,7 +352,7 @@ void* generator_worker(void* thread_params){
 					continue;
 				}
 
-				if(!move_left(start)){
+				if(move_left(start)){
 					pc->cost++;
 				}	
 				
@@ -365,7 +365,7 @@ void* generator_worker(void* thread_params){
 					continue;
 				}
 
-				if(!move_right(start)){
+				if(move_right(start)){
 					pc->cost++;
 				}
 				
@@ -378,7 +378,7 @@ void* generator_worker(void* thread_params){
 					continue;
 				}
 			
-				if(!move_down(start)){
+				if(move_down(start)){
 					pc->cost++;
 				}
 
@@ -391,7 +391,7 @@ void* generator_worker(void* thread_params){
 					continue;
 				}
 				
-				if(!move_up(start)){
+				if(move_up(start)){
 					pc->cost++;
 				}
 
@@ -447,7 +447,7 @@ void generate_patterns(int max_moves){
 
 	pthread_t threadArr[50];
 
-	for(int iter = 0; iter < 20; iter++){			
+	for(int iter = 0; iter < 2; iter++){			
 
 		//Store the threads in an array
 		for(int moves = 10; moves < max_moves; moves++){
