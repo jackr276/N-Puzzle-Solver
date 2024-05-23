@@ -47,6 +47,8 @@ struct pattern_cost{
 int N;
 //Keep track of how many unique configs we've created
 long num_unique_configs = 0;
+//Keep track of our database hit rate
+int num_database_hits = 0;
 //The starting and goal states
 struct state* start_state;
 struct state* goal_state;
@@ -63,7 +65,7 @@ struct state* succ_states[4];
 
 
 /**
- * Before we can do anything, we must read the entire pattern database into memory
+ * Before we can do anything, we must read the entire pattern database into memory as two big linked lists
  */
 void read_pattern_db(FILE* database){
 	//We will use the new_node as our holder for reading the database in
@@ -309,6 +311,87 @@ void merge_to_fringe(){
 	}	
 }
 
+/**
+ * Takes in a state and translates/compresses the 2D array into a 1D array with only the information that we care about
+ */
+void generate_pattern_from_state(struct pattern_cost* patternPtr, struct state* statePtr){
+	int tile;
+
+	int pattern_type = patternPtr->pattern_type;
+
+	//Determine how much space needs to be allocated for the pattern
+	if(!pattern_type){
+		patternPtr->pattern_length = N * N / 2;	
+	} else {
+		patternPtr->pattern_length = (N * N / 2) - 1;
+	}
+	
+	patternPtr->pattern = calloc(sizeof(int), patternPtr->pattern_length);
+	
+	//Generation for the first pattern type
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			//If we have a pattern tile
+			if((tile = statePtr->tiles[i][j]) != 0){	
+				if(!pattern_type && tile <= N*N/2){
+					//We store the index of the tile in the pattern at tile location - 1
+					//Example: If tile 1 is at position 8, we store [8] in the 0 spot of the array
+					patternPtr->pattern[tile - 1] = i * N + j;
+				} else if(pattern_type && tile > N*N/2){
+					//9 should be at 0 spot
+					patternPtr->pattern[tile - (N*N / 2) - 1] = i * N + j;	
+				}
+			}
+		}
+	}	
+}
+
+
+/**
+ * Define a simple function that checks if two patterns are identical for use in contained_in_db
+ */
+int patterns_same(int* pattern1, int* pattern2, int length){
+	//Compare tile by tile
+	for(int i = 0; i < length; i++){
+		if(pattern1[i] != pattern2[i]){
+			return 0;
+		}	
+	}
+	
+	//Return 1 because they are the same
+	return 1;
+}
+
+
+/**
+ * Traverse the appropriate database linked list and return the precomputed cost of a given
+ * pattern, if we can find one
+ */
+int get_cost_from_db(struct pattern_cost* patternPtr){
+	struct pattern_cost* cursor;
+
+	//Set the cursor to be the appropriate linked list
+	if(!patternPtr->pattern_type){
+		cursor = patterns_first_half;
+	}else{
+		cursor = patterns_last_half;
+	}
+
+	while(cursor != NULL){
+		//If the patterns match, return the cost of the cursor
+		if(patterns_same(patternPtr->pattern, cursor->pattern, patternPtr->pattern_length)){
+			num_database_hits++;
+			return cursor->cost;
+		}
+	
+		//Advance the cursor to the next node
+		cursor = cursor->next;
+	}
+
+	//If we get here, there was no match so return 0 for the cost
+	return 0;
+}
+
 
 /**
  * Update the prediction function for the state pointed to by succ_states[i]. If this pointer is null, simply skip updating
@@ -360,7 +443,26 @@ void update_prediction_function(int i){
 			statePtr->heuristic_cost += manhattan_distance;
 		}
 	}
-		
+
+
+	/**
+	 * We will now attempt to find pattern matches for this state in the precomputed pattern database, which
+	 * has already been read into memory. To do this, we'll need to convert our state into a pattern, and
+	 * then traverse the database to see if there are any matches
+	 */
+	//Decare 2 patterns that we will be using
+	struct pattern_cost* first_half = malloc(sizeof(struct pattern_cost));
+	struct pattern_cost* last_half = malloc(sizeof(struct pattern_cost));
+	//Set the pattern_type appropriately
+	first_half->pattern_type = 0;
+	last_half->pattern_type = 1;
+	
+	//Get the pattern from the state that we are evaluating
+	generate_pattern_from_state(first_half, statePtr);
+	generate_pattern_from_state(last_half, statePtr);
+
+	statePtr->heuristic_cost += get_cost_from_db(first_half) + get_cost_from_db(last_half);
+
 	//Once we have the heuristic_cost, update the total_cost
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
 }
@@ -663,7 +765,7 @@ int solve(){
 
 		//For very complex problems, print the iteration count to the console for a sanity check
 		if(iter > 1 && iter % 1000 == 0) {
-			printf("Iteration: %6d, %6ld total unique states generated\n", iter, num_unique_configs);
+			printf("Iteration: %6d, %6ld total unique states generated, %6d database hits\n", iter, num_unique_configs, num_database_hits);
 		}
 		
 		//End of one full iteration
