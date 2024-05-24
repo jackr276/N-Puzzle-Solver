@@ -479,7 +479,7 @@ void generate_patterns(int max_moves){
 	pthread_t threadArr[50];
 
 	//Each thread will run 20 times
-	for(int iter = 0; iter < 30; iter++){
+	for(int iter = 0; iter < 100; iter++){
 		for(int moves = 5; moves < max_moves; moves++){
 			//The first 25 threads will deal with the first half pattern
 			for(int i = 0; i < 25; i++){
