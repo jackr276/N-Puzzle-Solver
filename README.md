@@ -3,7 +3,7 @@ Author: [Jack Robbins](https://www.github.com/jackr276)
 
 ## Introduction
 The $N$ Puzzle problem is on the surface a simple problem to solve. The problem is as follows:
-> Given an initial configuration of an $N\times N$ grid of tiles, each labeled with distinct numbers from $0$ to $N^2 - 1$, determine the *smallest* sequence of single step moves that can be made with the $0$ tile such that the puzzle is in numerical *row-major* order, with the 0 slider in the $N-1$ row and $N-1$ column.
+> Given an initial configuration of an $N\times N$ grid of tiles, each labeled with distinct numbers from $0$ to $N^2 - 1$, determine the *smallest* sequence of single step moves that can be made with the $0$ tile such that the puzzle is in numerical *row-major* order, with the 0 slider in the $N-1$ row and $N-1$ column position.
 
 The definition can be a bit hard to parse without an example, so let's look at an example starting configuration and goal configuration.
 
@@ -46,8 +46,10 @@ while fringe is not empty:
   if state is goal:
       trace back solution path
       exit
+  end if
 
   expand state into its predecessors
+
   for each predecessor generated:
     if state is a repeat(in closed or fringe already):
         destroy state
@@ -55,6 +57,7 @@ while fringe is not empty:
     else:
         update prediction function for state
         priority queue insert state into fringe
+    end if
   end for
 
   add current state into closed 
@@ -67,7 +70,7 @@ In the algorithm above, we see that there are two data structures: **fringe** an
 ### Prediction Function
 The other important part of this algorithm is the prediction function for each state. This prediction function is the most importnat part of our algorithm. Effectively, this algorithm "guesses" how promising a state is. The lower the value of this prediction function, the more promising the state seems. Good "guesses" allow the algorithm to finish faster, and bad "guesses" will cause the algorithm to explore dead end paths and waste time. The prediction function implemented here focuses on estimating the cost to get from the current state to the goal state.    
 
-The format for our prediction function is as follows: `f(n) = g(n) + h(n)`. `g(n)` is referred to as the "previous travel", and is the simplest to calculate. It is calculated by counting the number of predecessors that a node has. This allows us to factor in the cost to reach a state so far, which is important if we want to find the **shortest** solution path possible. 
+The format for our prediction function is as follows: `f(n) = g(n) + h(n)`. `g(n)` is referred to as the "previous travel", and is the simplest to calculate. It is calculated by counting the number of predecessors that a node has. This allows us to factor in the cost to reach a state so far, which is important if we want to find the **shortest** solution path possible. Additionally, `g(n)` can be calculated during state generation by simply adding one to the predecessors current travel, making it basically free to compute.
 
 #### Heuristic Function
 However, the heuristic function `h(n)` is where most of the heavy lifting happens for the algorithm. This function uses calculations guess the number of moves required to change the current state into the goal state. These calculations are referred to as *heuristics*, and more specifically as *admissable heuristics*. For a heuristic to be admissable, it must always **understimate or equal** the cost to reach the goal for any given state. This ensures that we are always following the most optimal, meaning shortest, path to the solution. Heuristics that violate admissablility will not crash the program or cause any drastic errors, they will just simply lead to suboptimal solutions.
@@ -75,7 +78,7 @@ However, the heuristic function `h(n)` is where most of the heavy lifting happen
 This project currently uses two heuristics in combination: `manhattan distance` and `generalized linear conflict`.
 
 #### Manhattan Distance
-The Manhattan Distance heuristic is quite simple. Given a board and knowing the goal state, it calculates the sum of the horizontal and vertical distance from each tile's current position to its goal position. It can be imagined as taking each tile and sliding it horizontally and vertically into its goal position. This heuristic gives an effective lower bound on the number of moves required to reach a state, becuase it does not take into consideration the interactions between tiles.   
+The Manhattan Distance heuristic is quite simple. Given a board and knowing the goal state, it calculates the sum of the horizontal and vertical distance from each tile's current position to its goal position. It can be imagined as taking each tile and sliding it horizontally and vertically into its goal position. This heuristic gives an effective lower bound on the number of moves required to reach a state, becuase it does not take into consideration the interactions between tiles. For this reason, Manhattan distance is an admissable heuristic, because it will always underestimate the cost of reaching the goal state.
 
 From our example before:   
 | 1 | 7 | 15 | 4 |
@@ -85,5 +88,13 @@ From our example before:
 |**9**|**13**|**10**|**12**|      
 
 The Manhattan distance would be: `0 + 2 + 3 + 0 + 0 + 1 + 0 + 3 + 1 + 2 + 1 + 1 + 1 + 2 + 1 = 18`   
-It is important to note that we skip calculation anything for the 0 tile, as it is allowed to move. As it turns out, skipping the 0 tile for Manhattan distance calculations leads to much better cost estimation, as the 0 tile is what we use to manipulate the board.
+It is important to note that we skip calculation anything for the 0 tile, as it is allowed to move. As it turns out, skipping the 0 tile for Manhattan distance calculations leads to much better cost estimation, as the 0 tile is what we use to manipulate the board.   
+
+As stated before, Manhattan Distance does not take into account the interactions between tiles that are required for movement. This means that it is quite a drastic underestimate of how many moves are required to reach a state, leaving room for improvement. We will do this improvement with our next heuristic, generalized linear conflict.   
+#### Generalized Linear Conflict
+Generalized Linear Conflict can make up for Manhattan Distance's ignorance of tile interactions. Traditional Linear Conflict looks for two tiles that are both already in their goal row or goal column, but who are "swapped", meaning that their Manhattan Distances are both 1, and counts them as a linear conflict. Even though both Manhattan Distances are 1, it will take at least 2 additional moves to swap the two tiles around, because we have to use the 0 tile to do this. In the traditional heuristic, we count the number of such swapped tiles and multiply this number by 2 to get the Linear Conflict value. In my version of the heuristic, I generalize this conflict to the entire row and column, and instead of only searching for tiles that are 1 apart, I search for any mismatched tiles in the entire row. With this improved version of the heuristic, we get a more accurate prediction of how many moves are required to properly rearrange the entire board. It will of course still be an underestimate, and therefore admissable, because counting sometimes it may take more than 2 moves to swap two tiles. In fact, it often requires more than 2 moves, but we must keep the heuristic an underestimate to ensure that we always find the **shortest** path.
+
+>[!NOTE]
+>Potential Improvement Idea: try and find a more accuracte prediction multiplication. Initial research online suggested that taking the linear conflict count and doing `linear_conlict_count / (N - 1) + linear_conflict_count % (N - 1)`, but my results with this method have shown that this violates admissability in some cases
+
 
