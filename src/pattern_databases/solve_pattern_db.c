@@ -472,13 +472,14 @@ void update_prediction_function(int i){
 	database_cost = get_cost_from_db(first_half) + get_cost_from_db(last_half);
 	//statePtr->heuristic_cost += get_cost_from_db(first_half) + get_cost_from_db(last_half);
 	
-	//Once we have the heuristic_cost, update the total_cost
-	
+	//We will take the maximum cost between our database cost and the manhattan distance
 	if(database_cost > manhattan_distance){
 		statePtr->heuristic_cost = database_cost;
-	}else{
+	} else {
 		statePtr->heuristic_cost = manhattan_distance;
 	}
+
+	//Once we have the heuristic_cost, update the total_cost
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
 }
 
@@ -808,6 +809,12 @@ int main(int argc, char** argv){
 		return 1;
 	}
 
+	//If the user puts in a number less than 3, exit and show error
+	if(N < 4){
+		printf("Error. Using pattern databases for 3 puzzle is pointless. Please use \"solve.c\" for this purpose.\n");
+		return 0;
+	}
+
 	//Check if the number of arguments is correct. If not, exit the program and print an error
 	if(argc != N*N + 3){
 		//Give an error message
@@ -832,7 +839,7 @@ int main(int argc, char** argv){
 	//Close when done
 	fclose(db);
 
-	printf("Pattern database read successfully! Solver will now begin searching.\n");
+	printf("\nPattern database read successfully! Solver will now begin searching.\n");
 
 	//Important: Move the address of argv up by 2 so that initialize_start_goal can only see the initial config 
 	argv += 2;
