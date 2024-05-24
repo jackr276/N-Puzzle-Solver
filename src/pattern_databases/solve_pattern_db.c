@@ -444,10 +444,10 @@ void update_prediction_function(int i){
 			}
 
 			//Manhattan distance is the absolute value of the x distance and the y distance
-			manhattan_distance = abs(i - goal_rowCor) + abs(j - goal_colCor);	
+			manhattan_distance += abs(i - goal_rowCor) + abs(j - goal_colCor);	
 		
 			//Add manhattan distance for each tile
-			statePtr->heuristic_cost += manhattan_distance;
+			//statePtr->heuristic_cost += manhattan_distance;
 		}
 	}
 
@@ -469,9 +469,16 @@ void update_prediction_function(int i){
 	generate_pattern_from_state(first_half, statePtr);
 	generate_pattern_from_state(last_half, statePtr);
 
-	statePtr->heuristic_cost += get_cost_from_db(first_half) + get_cost_from_db(last_half);
+	database_cost = get_cost_from_db(first_half) + get_cost_from_db(last_half);
+	//statePtr->heuristic_cost += get_cost_from_db(first_half) + get_cost_from_db(last_half);
 	
 	//Once we have the heuristic_cost, update the total_cost
+	
+	if(database_cost > manhattan_distance){
+		statePtr->heuristic_cost = database_cost;
+	}else{
+		statePtr->heuristic_cost = manhattan_distance;
+	}
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
 }
 

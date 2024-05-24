@@ -479,7 +479,7 @@ void generate_patterns(int max_moves){
 	pthread_t threadArr[50];
 
 	//Each thread will run 20 times
-	for(int iter = 0; iter < 20; iter++){
+	for(int iter = 0; iter < 5; iter++){
 		for(int moves = 5; moves < max_moves; moves++){
 			//The first 25 threads will deal with the first half pattern
 			for(int i = 0; i < 25; i++){
@@ -569,7 +569,7 @@ int main(int argc, char** argv){
 	printf("Now generating database for %d puzzle problem\n\n", N);
 	
 	//Currently optimized for 15 puzzle
-	generate_patterns(80);
+	generate_patterns(120);
 	
 	//Let the user know it worked
 	printf("\nSuccess! Generated %d distinct patterns\n", num_unique_patterns);
