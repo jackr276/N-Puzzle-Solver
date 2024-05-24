@@ -569,7 +569,7 @@ int main(int argc, char** argv){
 	printf("Now generating database for %d puzzle problem\n\n", N);
 	
 	//Currently optimized for 15 puzzle
-	generate_patterns(120);
+	generate_patterns(100);
 	
 	//Let the user know it worked
 	printf("\nSuccess! Generated %d distinct patterns\n", num_unique_patterns);

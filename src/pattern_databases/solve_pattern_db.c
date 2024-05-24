@@ -475,9 +475,9 @@ void update_prediction_function(int i){
 	//Once we have the heuristic_cost, update the total_cost
 	
 	if(database_cost > manhattan_distance){
-		statePtr->heuristic_cost = database_cost;
+		statePtr->heuristic_cost = manhattan_distance + database_cost;
 	}else{
-		statePtr->heuristic_cost = manhattan_distance;
+		statePtr->heuristic_cost = manhattan_distance + database_cost;
 	}
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
 }
