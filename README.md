@@ -95,7 +95,7 @@ As stated before, Manhattan Distance does not take into account the interactions
 Generalized Linear Conflict can make up for Manhattan Distance's ignorance of tile interactions. Traditional Linear Conflict looks for two tiles that are both already in their goal row or goal column, but who are "swapped", meaning that their Manhattan Distances are both 1, and counts them as a linear conflict. Even though both Manhattan Distances are 1, it will take at least 2 additional moves to swap the two tiles around, because we have to use the 0 tile to do this. In the traditional heuristic, we count the number of such swapped tiles and multiply this number by 2 to get the Linear Conflict value. In my version of the heuristic, I generalize this conflict to the entire row and column, and instead of only searching for tiles that are 1 apart, I search for any mismatched tiles in the entire row. With this improved version of the heuristic, we get a more accurate prediction of how many moves are required to properly rearrange the entire board. It will of course still be an underestimate, and therefore admissable, because counting sometimes it may take more than 2 moves to swap two tiles. In fact, it often requires more than 2 moves, but we must keep the heuristic an underestimate to ensure that we always find the **shortest** path.
 
 >[!NOTE]
->Potential Improvement Idea: try and find a more accuracte prediction multiplication. Initial research online suggested that taking the linear conflict count and doing `linear_conlict_count / (N - 1) + linear_conflict_count % (N - 1)`, but my results with this method have shown that this violates admissability in some cases
+>Potential Improvement Idea: try and find a more accuracte prediction multiplication. Initial research online suggested that taking the linear conflict count and doing `linear_conflict_count / (N - 1) + linear_conflict_count % (N - 1)`, but my results with this method have shown that this violates admissability in some cases
 
 With these two heuristics combined, we have a powerful searching tool that allows for the solving of very complex puzzles(30+ moves) in less than 5 seconds. The heuristic is by no means perfect though, and sometimes it requires hundreds of thousands of iterations to solve random instances of the puzzle.
 
@@ -115,6 +115,10 @@ Do you want to use multithreading[Y/n]: y
 #Puzzle output and solution displays below here
 ```
 In this example, I've told the program to create a 4x4 puzzle with an initial complexity of 200, and to solve it using multithreading. It is impossible to predict how long the program will take to run, but usually configurations under 300 initial complexity solve within less than 10 seconds. If you are interested in seeing how the solver works, I greatly encourage you to download the source code file and give it a try yourself!
+
+>[!IMPORTANT]
+>Everything below this point is still experimental and a work in progress. Unfortunately, due a busy schedule, I have not had enough time to refine the pattern database heuristic to the point that I would like to, but basic functionality has been achieved with it, and there have even been some promising initial results using it.
+
 
 ### Pattern Databases
 
