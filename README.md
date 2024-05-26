@@ -97,4 +97,24 @@ Generalized Linear Conflict can make up for Manhattan Distance's ignorance of ti
 >[!NOTE]
 >Potential Improvement Idea: try and find a more accuracte prediction multiplication. Initial research online suggested that taking the linear conflict count and doing `linear_conlict_count / (N - 1) + linear_conflict_count % (N - 1)`, but my results with this method have shown that this violates admissability in some cases
 
+With these two heuristics combined, we have a powerful searching tool that allows for the solving of very complex puzzles(30+ moves) in less than 5 seconds. The heuristic is by no means perfect though, and sometimes it requires hundreds of thousands of iterations to solve random instances of the puzzle.
+
+## Source Code 
+This project contains several different source files for different purposes. The file [generate_start_config.c](https://github.com/jackr276/N-Puzzle-Solver/blob/main/src/generate_start_config.c) provides a convenient way of generating starting configurations to solve. It works by taking the goal state for any $N$-Puzzle that you'd like, and performing a set amount of random moves inputted by the user to scramble it. The more random moves, the more complex the starting configuration in theory. The two files [solve.c](https://github.com/jackr276/N-Puzzle-Solver/blob/main/src/solve.c) and [solve_multi_threaded.c](https://github.com/jackr276/N-Puzzle-Solver/blob/main/src/generate_multi_threaded.c) contain two different implementations of the A* solving algorithm. Both of these files implement the same heuristic and search strategy, but as the name suggests, **solve_multi_threaded.c** uses the `pthreads` library in C to parallelize the solver. For anyone curious about how this parallelization works, I would encourage you to look at the source code, as it is well documented. The multi-threaded solver is faster for solving large, complex puzzles, but is actually often slower for solving simpler configurations, due to the overhead of thread creation and management.
+
+### Running the Solver
+The interaction between the source code files can be a little complex until you get used to it. Fortunately, this has all been abstracted away through the runner script [run.sh](https://github.com/jackr276/N-Puzzle-Solver/blob/main/src/run.sh) for the end user. To run the solver for yourself, first download all of the source code to a unix-based operating system and navigate to the `src` folder. From there run the following:
+
+```console
+example@bash: ~/N-Puzzle-Solver/src $ chmod +x run.sh
+example@bash: ~/N-Puzzle-Solver/src $ ./run.sh
+Enter a positive integer for the NxN puzzle size: 4
+Enter a positive integer for complexity of initial configuration: 200
+Do you want to use multithreading[Y/n]: y
+
+#Puzzle output and solution displays below here
+```
+In this example, I've told the program to create a 4x4 puzzle with an initial complexity of 200, and to solve it using multithreading. It is impossible to predict how long the program will take to run, but usually configurations under 300 initial complexity solve within less than 10 seconds. If you are interested in seeing how the solver works, I greatly encourage you to download the source code file and give it a try yourself!
+
+### Pattern Databases
 
