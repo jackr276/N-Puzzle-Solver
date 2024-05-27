@@ -164,6 +164,7 @@ void initialize_start_goal(char** argv){
 	goal_state->tiles[N-1][N-1] = 0;
 
 	//Initialize everything else in the goal state
+	goal_state->zero_row = goal_state->zero_column = N-1;
 	goal_state->total_cost = 0;
 	goal_state->current_travel = 0;
 	goal_state->heuristic_cost = 0;
@@ -546,6 +547,11 @@ void generate_successors(struct state* predecessor){
  * A simple helper function that will tell if two states are the same. To be used for filtering
  */
 int states_same(struct state* a, struct state* b){
+	//Efficiency speedup -- if zero row and column aren't equal, return false
+	if(a->zero_row != b->zero_row || a->zero_column != b->zero_column){
+		return 0;
+	}
+
 	//Go through each row in the dynamic tile matrix in both states
 	for(int i = 0; i < N; i++){
 		//We can use memcmp to efficiently compare the space pointed to by each pointer
