@@ -11,7 +11,7 @@ public class Solver{
 
 	public void solve(Puzzle start, Puzzle goal){
 		//Begin timing the solver
-		long startTime = System.nanoTime();
+		long startTime = System.currentTimeMillis();
 		//Keep track of the number of iterations and states generated
 		int numIterations = 0;
 		int uniqueStates = 0;
@@ -32,12 +32,12 @@ public class Solver{
 			//If we have the goal, stop searching and print the solution
 			if(current.equals(goal)){
 				//Stop the timer
-				long endTime = System.nanoTime();
+				long endTime = System.currentTimeMillis();
 				//Display solution
 				printSolution(current);
 				//Print out runtime stats
 				System.out.println("--------------------------------------------------");
-				System.out.printf("Time taken to solve: %7f",  endTime - startTime / 1000000000.0);
+				System.out.printf("Time taken to solve: %7f seconds\n",  (endTime - startTime) / 1000.0);
 				System.out.println(uniqueStates + " unique states generated");
 				System.out.println("--------------------------------------------------");
 				return;
@@ -45,13 +45,15 @@ public class Solver{
 
 			//Generate the successors from current 
 			ArrayList<Puzzle> successors = generateSuccessors(current);
-
+			
 			//Check for repeats and add into fringe
 			for(Puzzle successor : successors){
 				//If the puzzle is not a repeat, update the prediction function and add it to the fringe 
 				if(!fringe.contains(successor) && !closed.contains(successor)){
 					successor.updatePredictionFunction();
 					fringe.offer(successor);
+					//We've found one more unique state
+					uniqueStates++;
 				}
 			}
 
@@ -119,8 +121,7 @@ public class Solver{
 	
 		//Now go backwards through the solution trace, printing each state
 		while(!solutionTrace.isEmpty()){
-			System.out.println(solutionTrace.pop() + "\n");
+			System.out.println(solutionTrace.pop());
 		}
 	}
-
 }

@@ -68,7 +68,7 @@ public class Puzzle{
 	 * for a given number of times
 	 */
 	public void createStartConfig(int maxMoves){
-		Random rand = new Random(1000000000);
+		Random rand = new Random(System.currentTimeMillis());
 		//Get a random integer for our random move
 		int direction; 
 	

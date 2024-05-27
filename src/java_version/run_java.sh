@@ -4,6 +4,10 @@
 NEWLINE=$'\n'
 
 
+read -p "Enter the size for the N puzzle: " SIZE
+read -p "Enter the complexity of the starting configuration: " COMPLEXITY
+
+
 #erase everything in out
 rm -r out/*
 
@@ -32,7 +36,7 @@ echo "Attempting to Run${NEWLINE}"
 
 #assume we run the file called "Main.java"
 cd out
-java Main
+java Main $SIZE $COMPLEXITY
 
 if [[ $? -ne 0 ]]; then
 	echo "${NEWLINE}Runtime Error Encountered"
