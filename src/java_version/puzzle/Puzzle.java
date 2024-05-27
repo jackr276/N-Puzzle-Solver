@@ -103,41 +103,102 @@ public class Puzzle{
 	/**
 	 * A helper function that performs a random move to generate successors
 	 */
-	public boolean generateSuccessor(int moveType){
+	public Puzzle generateSuccessor(int moveType){
+		//We return null if generation didn't work
 		boolean successful = false;
+
+		//We need a copy of the current object
+		Puzzle successor = new Puzzle(this);
 
 		//0 = left move
 		if(moveType == 0 && this.zeroColumn > 0){
-			this.moveLeft();
+			successor.moveLeft();
 			successful = true;
 		}
 
 		//1 = right move
 		if(moveType == 1 && this.zeroColumn < N - 1){
-			this.moveRight();
+			successor.moveRight();
 			successful = true;
 		}
 			
 		//2 = down move
 		if(moveType == 2 && this.zeroRow < N - 1){
-			this.moveDown();
+			successor.moveDown();
 			successful = true;
 		}
 
 		//3 = up move
 		if(moveType == 3 && this.zeroRow > 0){
-			this.moveUp();
+			successor.moveUp();
 			successful = true;
 		}
 
-		return successful;
+		//Return the state if it worked, null if not
+		if(successful){
+			return successor;
+		} else {
+			return null;
+		}
 	}
+
 
 	/**
 	 * A simple getter for use in our comparator
 	 */
 	public int getComparisonFunction(){
 		return this.predictionValue;
+	}
+
+	
+	/**
+	 * A simple getter for the predecessor
+	 */
+	public Puzzle getPredecessor(){
+		return this.predecessor;
+	}
+
+
+	/**
+	 * The most impactful part of our program - updates the prediction function using manhattan distance
+	 * and generalized linear conflict
+	 */
+	public void updatePredictionFunction(){
+		//Calculate manhattan distance first
+		this.heuristicValue = calculateManhattanDistance();
+		//Prediction value is heuristic value plus the current travel
+		this.predictionValue = this.heuristicValue + this.currentTravel;
+	}
+
+	
+	/**
+	 * A helper function for finding manhattan distance
+	 */
+	public int calculateManhattanDistance(){
+		//Declare all needed variables
+		short tile, goalRow, goalColumn;
+		//Initialize running sum		
+		int manhattanDistance = 0;
+
+		for(int i = 0; i < N; i++){
+			for(int j = 0; j < N; j++){
+				tile = this.puzzle[i][j];
+				
+				//We always disregard the slider
+				if(tile == 0){
+					continue;
+				}
+
+				//Mathematically calculate goal positions
+				goalRow = (short)((tile - 1) / N);
+				goalColumn = (short)((tile - 1) % N);
+	
+				//Manhattan distance is absolute value of both vertical and horizontal distances
+				manhattanDistance += Math.abs(i - goalRow) + Math.abs(j - goalColumn);
+			}
+		}
+
+		return manhattanDistance;
 	}
 
 

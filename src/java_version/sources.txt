@@ -1,3 +1,4 @@
+./puzzle/PuzzleComparator.java
 ./puzzle/Puzzle.java
 ./puzzle/PuzzleException.java
 ./Main.java
