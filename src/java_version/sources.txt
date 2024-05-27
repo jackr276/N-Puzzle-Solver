@@ -1,4 +1,4 @@
 ./puzzle/Puzzle.java
 ./puzzle/PuzzleException.java
-./Solve.java
 ./Main.java
+./solver/Solver.java

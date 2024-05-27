@@ -1,5 +1,6 @@
 package puzzle;
 
+import java.util.Comparator;
 //For Random puzzle generation
 import java.util.Random;
 
@@ -33,6 +34,8 @@ public class Puzzle{
 		this.createGoalConfig();
 		//Important: set the predecessor to be null for solution traceback end
 		this.predecessor = null;
+		//0 by default
+		this.predictionValue = 0;
 	}
 
 
@@ -96,6 +99,46 @@ public class Puzzle{
 		}
 	}
 
+
+	/**
+	 * A helper function that performs a random move to generate successors
+	 */
+	public boolean generateSuccessor(int moveType){
+		boolean successful = false;
+
+		//0 = left move
+		if(moveType == 0 && this.zeroColumn > 0){
+			this.moveLeft();
+			successful = true;
+		}
+
+		//1 = right move
+		if(moveType == 1 && this.zeroColumn < N - 1){
+			this.moveRight();
+			successful = true;
+		}
+			
+		//2 = down move
+		if(moveType == 2 && this.zeroRow < N - 1){
+			this.moveDown();
+			successful = true;
+		}
+
+		//3 = up move
+		if(moveType == 3 && this.zeroRow > 0){
+			this.moveUp();
+			successful = true;
+		}
+
+		return successful;
+	}
+
+	/**
+	 * A simple getter for use in our comparator
+	 */
+	public int getComparisonFunction(){
+		return this.predictionValue;
+	}
 
 
 	/**
