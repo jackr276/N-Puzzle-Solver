@@ -143,13 +143,13 @@ int main(int argc, char** argv) {
 
 	int row, col;
 	//Now generate the goal state. Once we create the goal state, we will "mess it up" according to the input number
-	for(int index=1; index < N*N; index++){
+	for(int index = 1; index < N*N; index++){
 		//Mathematically generate row position for goal by integer dividing the number by N
 		row = (index-1) / N;
 		//Mathematically generate column position for goal by finding remainder of row division
 		col = (index-1) % N;
 		//Put the index in the correct position
-		statePtr->tiles[row][col]=index;
+		statePtr->tiles[row][col] = index;
 	}
 	
 	//Now that we have generated and placed numbers 1-15, we will put the 0 slider in the very last slot
