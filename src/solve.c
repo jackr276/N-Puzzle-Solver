@@ -272,13 +272,14 @@ void update_prediction_function(int i){
 			//We do not care about 0 as it can move, so skip it
 			if(selected_num == 0){
 				continue;
-			//Otherwise mathematically find the needed position
-			} else {
-				//Goal row coordinate is the index of the number divided by number of rows
-				goal_rowCor = (selected_num - 1) / N;
-				//Goal column coordinate is the index modulated by column length 
-				goal_colCor = (selected_num - 1) % N;
 			}
+
+			//Otherwise mathematically find the needed position
+			//Goal row coordinate is the index of the number divided by number of rows
+			goal_rowCor = (selected_num - 1) / N;
+			//Goal column coordinate is the index modulated by column length 
+			goal_colCor = (selected_num - 1) % N;
+				
 
 			//Manhattan distance is the absolute value of the x distance and the y distance
 			manhattan_distance = abs(i - goal_rowCor) + abs(j - goal_colCor);	
@@ -555,7 +556,7 @@ int states_same(struct state* a, struct state* b){
 	//Go through each row in the dynamic tile matrix in both states
 	for(int i = 0; i < N; i++){
 		//We can use memcmp to efficiently compare the space pointed to by each pointer
-		if (memcmp(a->tiles[i], b->tiles[i], sizeof(int) * N) != 0){
+		if(memcmp(a->tiles[i], b->tiles[i], sizeof(int) * N) != 0){
 			//If we find a difference, return 0
 			return 0;
 		}

@@ -35,6 +35,7 @@ public class Puzzle{
 		//Important: set the predecessor to be null for solution traceback end
 		this.predecessor = null;
 		//0 by default
+		this.currentTravel = 0;
 		this.predictionValue = 0;
 	}
 
@@ -165,7 +166,7 @@ public class Puzzle{
 	 */
 	public void updatePredictionFunction(){
 		//Calculate manhattan distance first
-		this.heuristicValue = calculateManhattanDistance();
+		this.heuristicValue = calculateManhattanDistance() + calculateGeneralizedLinearConflict();
 		//Prediction value is heuristic value plus the current travel
 		this.predictionValue = this.heuristicValue + this.currentTravel;
 	}
@@ -174,7 +175,7 @@ public class Puzzle{
 	/**
 	 * A helper function for finding manhattan distance
 	 */
-	public int calculateManhattanDistance(){
+	private int calculateManhattanDistance(){
 		//Declare all needed variables
 		short tile, goalRow, goalColumn;
 		//Initialize running sum		
@@ -187,18 +188,98 @@ public class Puzzle{
 				//We always disregard the slider
 				if(tile == 0){
 					continue;
-				}
+				} 
+
+				
 
 				//Mathematically calculate goal positions
 				goalRow = (short)((tile - 1) / N);
 				goalColumn = (short)((tile - 1) % N);
-	
+				
 				//Manhattan distance is absolute value of both vertical and horizontal distances
 				manhattanDistance += Math.abs(i - goalRow) + Math.abs(j - goalColumn);
 			}
 		}
 
 		return manhattanDistance;
+	}
+
+
+	/**
+	 * A helper function that gives us the generalized linear conflict value for the heuristic
+	 */
+	private int calculateGeneralizedLinearConflict(){
+		//Initially we have no linear conflicts
+		int linearConflicts = 0;
+		//Declare for convenience
+		int left, right, above, below;
+		int goalRowCorLeft, goalRowCorRight, goalColCorAbove, goalColCorBelow;
+
+		for(int i = 0; i < N; i++){
+			for(int j = 0; j < N - 1; j++){
+				//Grab the leftmost tile for convenience
+				left = this.puzzle[i][j];
+
+				//We don't care about the zero tile
+				if(left == 0){
+					continue;
+				}
+
+				//Now we go through every tile right of left
+				for(int k = j+1; k < N; k++){
+					//Grab the rightmost tile for convenience
+					right = this.puzzle[i][k];
+
+					//Again we don't care about the 0tile
+					if(right == 0){
+						continue;
+					}
+
+					goalRowCorLeft = (left - 1) / N;
+					goalRowCorRight = (right - 1) / N;
+
+					if(goalRowCorLeft != goalRowCorRight || goalRowCorRight != i){
+						continue;
+					}
+
+					if(left > right){
+						linearConflicts++;
+					}
+				}
+			}
+		}
+
+		for(int i = 0; i < N-1; i++){
+			for(int j = 0; j < N; j++){
+				above = this.puzzle[i][j];
+
+				if(above == 0){
+					continue;
+				}
+
+				for(int k = i+1; k < N; k++){
+					below = this.puzzle[k][j];
+
+					if(below == 0){
+						continue;
+					}
+					
+					goalColCorAbove = (above - 1) % N;
+					goalColCorBelow = (below - 1) % N;
+
+					if(goalColCorAbove != goalColCorBelow || goalColCorAbove != j){
+						continue;
+					}
+
+					if(above > below){
+						linearConflicts++;
+					}
+				}
+
+			}
+		}
+		
+		return linearConflicts * 2;
 	}
 
 
