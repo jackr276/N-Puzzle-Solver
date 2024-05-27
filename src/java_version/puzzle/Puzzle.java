@@ -20,6 +20,8 @@ public class Puzzle{
 	private int heuristicValue;
 	private int predictionValue;
 	/* ========================= */
+	//Keep track of the predecessor
+	private Puzzle predecessor;
 
 
 	//The puzzle constructor takes in a number N for the row and column dimensions of the puzzle
@@ -29,28 +31,39 @@ public class Puzzle{
 		puzzle = new short[N][N];
 		//Call the helper to create the goal config
 		this.createGoalConfig();
+		//Important: set the predecessor to be null for solution traceback end
+		this.predecessor = null;
+	}
+
+
+	//The copy constructor takes in a puzzle of an identical size and performs a deep copy
+	public Puzzle(Puzzle predecessor){
+		this.N = predecessor.N;
+		this.puzzle = new short[N][N];
+
+		//Perform a deep copy of the puzzle array
+		for(int i = 0; i < N; i++){
+			for(int j = 0; j < N; j++){
+				this.puzzle[i][j] = predecessor.puzzle[i][j];
+			}
+		}
+
+		//Copy over the zero row and column
+		this.zeroRow = predecessor.zeroRow;
+		this.zeroColumn = predecessor.zeroColumn;
+
+		//The current travel is now one more
+		this.currentTravel = predecessor.currentTravel + 1;
+
+		//Set the predecessor to be the copied puzzle
+		this.predecessor = predecessor;
 	}
 
 
 	/**
-	 * A simple private helper method that mathematically generates the start config for any given N
+	 * Turn the calling object into a starting config by randomly moving the 0 tile around
+	 * for a given number of times
 	 */
-	private void createGoalConfig(){
-		short row, col;
-		//Go through each tile, mathematically finding position
-		for(short tile = 1; tile < this.N * this.N; tile++){
-			row = (short)((tile - 1) / this.N);	
-			col = (short)((tile - 1) % this.N);
-			//Store the tile value in the proper position
-			this.puzzle[row][col] = tile;
-		}
-		//Zero row and column always start out as the last
-		this.zeroRow = this.zeroColumn = (short)(N-1);
-		//Save in the zero slider
-		this.puzzle[zeroRow][zeroColumn] = 0;
-	}
-
-
 	public void createStartConfig(int maxMoves){
 		Random rand = new Random(1000000000);
 		//Get a random integer for our random move
@@ -81,6 +94,26 @@ public class Puzzle{
 				this.moveUp();
 			}
 		}
+	}
+
+
+
+	/**
+	 * A simple private helper method that mathematically generates the start config for any given N
+	 */
+	private void createGoalConfig(){
+		short row, col;
+		//Go through each tile, mathematically finding position
+		for(short tile = 1; tile < this.N * this.N; tile++){
+			row = (short)((tile - 1) / this.N);	
+			col = (short)((tile - 1) % this.N);
+			//Store the tile value in the proper position
+			this.puzzle[row][col] = tile;
+		}
+		//Zero row and column always start out as the last
+		this.zeroRow = this.zeroColumn = (short)(N-1);
+		//Save in the zero slider
+		this.puzzle[zeroRow][zeroColumn] = 0;
 	}
 
 	
@@ -137,6 +170,39 @@ public class Puzzle{
 
 
 	/**
+	 * An equals method for comparing puzzles 
+	 */
+	@Override
+	public boolean equals(Object other){
+		//Check if we have the same class
+		if(other.getClass() != Puzzle.class){
+			return false;
+		}
+		
+		//Cast to puzzle
+		Puzzle o = (Puzzle)other;
+
+		//Efficiency speedup -- compare zero positions
+		if(this.zeroRow != o.zeroRow || this.zeroColumn != o.zeroColumn){
+			return false;
+		}
+
+		//If that fails, go tile by tile
+		for(int i = 0; i < N; i++){
+			for(int j = 0; j < N; j++){
+				//One mismatch is all we need to return false
+				if(this.puzzle[i][j] != o.puzzle[i][j]){
+					return false;
+				}
+			}
+		}
+
+		//If we get here they are the same, so
+		return true;
+	}
+
+
+	/**
 	 * Simple toString() that prints out the puzzle board
 	 */
 	@Override
@@ -154,5 +220,4 @@ public class Puzzle{
 	
 		return retVal;
 	}
-
 }
