@@ -22,7 +22,7 @@
  */
 struct state{
 	//Define a dynamic 2D array for the tiles since we have a variable puzzle size
-	int** tiles;
+	short** tiles;
 	//For A*, define the total_cost, how far the tile has traveled, and heuristic cost
 	int total_cost, current_travel, heuristic_cost;
 	//location (row and colum) of blank tile 0
@@ -43,6 +43,8 @@ struct thread_params{
 	struct state* predecessor;
 	//0 = left move, 1 = right move, 2 = down move, 3 = up move
 	int option;	
+	//Current highest closed index
+	int next_closed_index;
 };
 
 
@@ -56,8 +58,10 @@ struct state* start_state;
 struct state* goal_state;
 //The fringe is the set of all states open for exploration. It is maintained as a linked list
 struct state* fringe = NULL;
-//Closed is a linked list containing all sets previously examined. This is used to avoid repeating
-struct state* closed = NULL;
+//Closed is an array containing all sets previously examined. This is used to avoid repeating
+struct state** closed;
+//Define an initial starting size of 5000
+int closed_max_size = 5000;
 //Every time a state is expanded, at most 4 successor states will be created
 struct state* succ_states[4];
 /* ========================================================== */
@@ -69,11 +73,11 @@ struct state* succ_states[4];
  */
 void initialize_state(struct state* statePtr){
 	//Declare all of the pointers needed for each row
-	statePtr->tiles = malloc(sizeof(int*) * N);
+	statePtr->tiles = malloc(sizeof(short*) * N);
 
 	//For each row, allocate space for N integers
 	for(int i = 0; i < N; i++){
-		statePtr->tiles[i] = malloc(sizeof(int) * N);
+		statePtr->tiles[i] = malloc(sizeof(short) * N);
 	}
 }
 
@@ -130,7 +134,7 @@ void initialize_start_goal(char** argv){
 
 	//Start at 1, argv[0] is program name
 	int index = 1;
-	int tile;
+	short tile;
 
 	//Insert everything into the tiles matrix
 	for (int i = 0; i < N; i++){
@@ -169,7 +173,7 @@ void initialize_start_goal(char** argv){
 
 	int row, col;
 	//To create the goal state, place the numbers 1-15 in the appropriate locations
-	for(int num = 1; num < N*N; num++){
+	for(short num = 1; num < N*N; num++){
 		//We can mathematically find row and column positions for inorder numbers
 		row = (num - 1) / N;
 		col = (num - 1) % N;
@@ -276,7 +280,7 @@ void update_prediction_function(int i){
 	*/
 
 	//Declare all needed variables
-	int selected_num, goal_rowCor, goal_colCor;	
+	short selected_num, goal_rowCor, goal_colCor;	
 	//Keep track of the manhattan distance
 	int manhattan_distance;
 
@@ -317,9 +321,9 @@ void update_prediction_function(int i){
 	//We initially have no linear conflicts
 	int linear_conflicts = 0;
 	//Declare for convenience
-	int left, right, above, below;
+	short left, right, above, below;
 	//Also declare goal row coordinates for convenience
-	int goal_rowCor_left, goal_rowCor_right, goal_colCor_above, goal_colCor_below;
+	short goal_rowCor_left, goal_rowCor_right, goal_colCor_above, goal_colCor_below;
 
 	//Check each row for linear conflicts
 	for(int i = 0; i < N; i++){
@@ -415,7 +419,7 @@ void update_prediction_function(int i){
  */
 void swap(int row1, int column1, int row2, int column2, struct state* statePtr){
 	//Store the first tile in a temp variable
-	int tile = statePtr->tiles[row1][column1];
+	short tile = statePtr->tiles[row1][column1];
 	//Put the tile from row2, column2 into row1, column1
 	statePtr->tiles[row1][column1] = statePtr->tiles[row2][column2];
 	//Put the temp in row2, column2
@@ -479,7 +483,7 @@ int states_same(struct state* a, struct state* b){
 	//Go through each row in the dynamic tile matrix in both states
 	for(int i = 0; i < N; i++){
 		//We can use memcmp to efficiently compare the space poitned to by each pointer
-		if(memcmp(a->tiles[i], b->tiles[i], sizeof(int) * N) != 0){
+		if(memcmp(a->tiles[i], b->tiles[i], sizeof(short) * N) != 0){
 			//If we find a difference, return 0
 			return 0;
 		}
@@ -491,17 +495,17 @@ int states_same(struct state* a, struct state* b){
 
 
 /**
- * Check to see if the state at position i in the given linkedList is repeating. If it is, free it and
+ * Check to see if the state at position i in fringe is repeating. If it is, free it and
  * set the pointer to be null
  */
-void check_repeating(int i, struct state* stateLinkedList){ 	
+void check_repeating_fringe(int i){ 	
 	//If succ_states[i] is NULL, no need to check anything
 	if(succ_states[i] == NULL){
 		return;
 	}
 
 	//Get a cursor to iterate over the linkedList	
-	struct state* cursor = stateLinkedList;
+	struct state* cursor = fringe;
 	//Go through the linkedList, if we ever find an element that's the same, break out and free the pointer
 	while(cursor != NULL){
 		//If the states match, we free the pointer and exit the loop
@@ -519,6 +523,34 @@ void check_repeating(int i, struct state* stateLinkedList){
 		//Once we get here, the state at i either survived and isn't null, or was freed and set to NULL
 	}
 }
+
+
+/**
+ * Check for repeats in the closed array. Since we don't need any priority queue functionality, 
+ * using closed as an array is a major speedup for us
+ */
+void check_repeating_closed(int max_index, int state_index){
+	//If this has already been made null, simply return
+	if(succ_states[state_index] == NULL){
+		return;
+	}
+
+	//Go through the entire populated closed array
+	for(int i = 0; i < max_index; i++){
+		//If at any point we find that the states are the same
+		if(states_same(closed[i], succ_states[state_index])){
+			//Free both the internal memory and the state itself
+			destroy_state(succ_states[state_index]);
+			free(succ_states[state_index]);
+			//Set to null as a warning
+			succ_states[state_index] = NULL;
+			//break out of the loop and exit
+			break;
+		}
+	}
+	//If we get here, we know that the state was not repeating
+}
+
 
 
 /**
@@ -609,8 +641,8 @@ void* generator_worker(void* thread_params){
 	//Only perform the checks if moved is not null
 	if(moved != NULL){
 		//Now we must check for repeating
-		check_repeating(option, fringe);
-		check_repeating(option, closed);
+		check_repeating_closed(parameters->next_closed_index, option);
+		check_repeating_fringe(option);
 		//Update prediction function
 		update_prediction_function(option);
 	}
@@ -624,7 +656,7 @@ void* generator_worker(void* thread_params){
  * This multi-threaded version of successor generation and validation spawns an individual thread for
  * each of the 4 possible moves, potentially expediting the process of generating and checking successors
  */
-void generate_valid_successors(struct state* predecessor){
+void generate_valid_successors(struct state* predecessor, int max_closed_index){
 	//We will create 4 threads, once for each successor potential successor
 	pthread_t thread_arr[4];
 	//We also need 4 thread_param structures 
@@ -637,6 +669,8 @@ void generate_valid_successors(struct state* predecessor){
 		param_arr[i]->predecessor = predecessor;
 		//The option will tell the thread function what move to make
 		param_arr[i]->option = i;
+		//Set the highest closed index
+		param_arr[i]->next_closed_index = max_closed_index;
 		
 		//Spawn our worker threads, generator_worker is the thread funtion, and paramArr[i]
 		//is the needed struct input
@@ -664,6 +698,11 @@ int solve(){
 	int iter = 0;
 	//Put the start state into the fringe to begin the search
 	fringe = start_state; 
+	//We will keep a reference to the next available closed index
+	int next_closed_index = 0;
+	//Make the initial allocation for closed
+	closed = malloc(sizeof(struct state*) * closed_max_size);
+
 	//Maintain a pointer for the current state in the search
 	struct state* curr_state;
 
@@ -716,7 +755,7 @@ int solve(){
 			//Print out the number of unique configurations generated
 			printf("Unique configurations generated by solver: %ld\n", num_unique_configs);
 			//Print out total memory consumption in Megabytes
-			printf("Memory consumed: %.2f MB\n", (sizeof(struct state) + N*N*sizeof(int)) * num_unique_configs / 1048576.0);
+			printf("Memory consumed: %.2f MB\n", (sizeof(struct state) + N*N*sizeof(short)) * num_unique_configs / 1048576.0);
 			//Print out CPU time(NOT wall time) spent
 			printf("Total CPU time spent: %.7f seconds\n\n", time_spent_CPU);	
 			printf("------------------------------------------------------\n\n");
@@ -731,18 +770,27 @@ int solve(){
 		 */
 
 		//Generate successors to the current state once we know it isn't a solution
-		generate_valid_successors(curr_state);
+		generate_valid_successors(curr_state, next_closed_index);
 		
 		/* End multi-threading */
 
 		//Add all necessary states to fringe now that we have checked for repeats and updated predictions 
 		//Additionally, we need to update the num_unique_configs, this will be done in merge_to_fringe
 		merge_to_fringe(); 
-		
-		//Move the current state into closed, insert at head("Push")
-		curr_state->next=closed;
-		//Maintain closed properly
-		closed=curr_state;
+	
+		//Add to closed
+		//If we run out of space, we can expand
+		if(next_closed_index == closed_max_size){
+			//Double closed max size
+			closed_max_size *= 2;
+			//Reallocate space for closed
+			closed = realloc(closed, sizeof(struct state*) * closed_max_size);
+		}
+
+		//Put curr_state into closed
+		closed[next_closed_index] = curr_state;
+		//Keep track of the next closed index
+		next_closed_index++;
 
 		//For very complex problems, print the iteration count to the console for a sanity check
 		if(iter > 1 && iter % 1000 == 0) {

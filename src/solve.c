@@ -18,7 +18,7 @@
  */
 struct state {
 	//Define a dynamic 2D array for the tiles since we have a variable puzzle size
-	int** tiles;
+	short** tiles;
 	//For A*, define the total_cost, how far the tile has traveled, and heuristic cost int total_cost, current_travel, heuristic_cost;
 	int total_cost, current_travel, heuristic_cost;
 	//location (row and colum) of blank tile 0
@@ -40,8 +40,10 @@ struct state* start_state;
 struct state* goal_state;
 //The fringe is the set of all states open for exploration. It is maintained as a linked list
 struct state* fringe = NULL;
-//Closed is a linked list containing all sets previously examined. This is used to avoid repeating
-struct state* closed = NULL;
+//Closed is an array containing all sets previously examined. This is used to avoid repeating
+struct state** closed;
+//Define an initial starting size of 5000
+int closed_max_size = 5000;
 //Every time a state is expanded, at most 4 successor states will be created
 struct state* succ_states[4];
 /* ========================================================== */
@@ -53,11 +55,11 @@ struct state* succ_states[4];
  */
 void initialize_state(struct state* statePtr){
 	//Declare all of the pointers needed for each row
-	statePtr->tiles = malloc(sizeof(int*) * N);
+	statePtr->tiles = malloc(sizeof(short*) * N);
 
 	//For each row, allocate space for N integers
 	for(int i = 0; i < N; i++){
-		statePtr->tiles[i] = malloc(sizeof(int) * N);
+		statePtr->tiles[i] = malloc(sizeof(short) * N);
 	}
 }
 
@@ -114,7 +116,7 @@ void initialize_start_goal(char** argv){
 
 	//Start at 1, argv[0] is program name and argv has been adjusted up by 1 to only contain the start state information
 	int index = 1;
-	int tile;
+	short tile;
 
 	//Insert everything into the tiles matrix
 	for (int i = 0; i < N; i++){
@@ -153,7 +155,7 @@ void initialize_start_goal(char** argv){
 
 	int row, col;
 	//To create the goal state, place the numbers 1-15 in the appropriate locations
-	for(int num = 1; num < N*N; num++){
+	for(short num = 1; num < N*N; num++){
 		//We can mathematically find row and column positions for inorder numbers
 		row = (num - 1) / N;
 		col = (num - 1) % N;
@@ -216,7 +218,6 @@ void priority_queue_insert(int i){
 		//Reattach the rest of the linked list
 		succ_states[i]->next = temp;
 	}
-	
 }
 
 
@@ -259,7 +260,7 @@ void update_prediction_function(int i){
 	*/
 
 	//Declare all needed variables
-	int selected_num, goal_rowCor, goal_colCor;
+	short selected_num, goal_rowCor, goal_colCor;
 	//Keep track of the manhattan distance
 	int manhattan_distance;
 	
@@ -300,9 +301,9 @@ void update_prediction_function(int i){
 	//We initially have no linear conflicts
 	int linear_conflicts = 0;
 	//Declare for convenience
-	int left, right, above, below;
+	short left, right, above, below;
 	//Also declare goal row coordinates for convenience
-	int goal_rowCor_left, goal_rowCor_right, goal_colCor_above, goal_colCor_below;
+	short goal_rowCor_left, goal_rowCor_right, goal_colCor_above, goal_colCor_below;
 
 	//Check each row for linear conflicts
 	for(int i = 0; i < N; i++){
@@ -399,7 +400,7 @@ void update_prediction_function(int i){
  */
 void swap(int row1, int column1, int row2, int column2, struct state* statePtr){
 	//Store the first tile in a temp variable
-	int tile = statePtr->tiles[row1][column1];
+	short tile = statePtr->tiles[row1][column1];
 	//Put the tile from row2, column2 into row1, column1
 	statePtr->tiles[row1][column1] = statePtr->tiles[row2][column2];
 	//Put the temp in row2, column2
@@ -556,7 +557,7 @@ int states_same(struct state* a, struct state* b){
 	//Go through each row in the dynamic tile matrix in both states
 	for(int i = 0; i < N; i++){
 		//We can use memcmp to efficiently compare the space pointed to by each pointer
-		if(memcmp(a->tiles[i], b->tiles[i], sizeof(int) * N) != 0){
+		if(memcmp(a->tiles[i], b->tiles[i], sizeof(short) * N) != 0){
 			//If we find a difference, return 0
 			return 0;
 		}
@@ -568,17 +569,17 @@ int states_same(struct state* a, struct state* b){
 
 
 /**
- * Check to see if the state at position i in the given linkedList is repeating. If it is, free it and
+ * Check to see if the state at position i in the fringe is repeating. If it is, free it and
  * set the pointer to be null
  */
-void check_repeating(int i, struct state* stateLinkedList){ 	
+void check_repeating_fringe(int i){ 	
 	//If succ_states[i] is NULL, no need to check anything
 	if(succ_states[i] == NULL){
 		return;
 	}
 
 	//Get a cursor to iterate over the linkedList	
-	struct state* cursor = stateLinkedList;
+	struct state* cursor = fringe;
 	//Go through the linkedList, if we ever find an element that's the same, break out and free the pointer
 	while(cursor != NULL){
 		//If the states match, we free the pointer and exit the loop
@@ -599,6 +600,33 @@ void check_repeating(int i, struct state* stateLinkedList){
 
 
 /**
+ * Check for repeats in the closed array. Since we don't need any priority queue functionality,
+ * using closed as an array is a major speedup for us
+ */
+void check_repeating_closed(int max_index, int state_index){
+	//If this has already been made null, simply return
+	if(succ_states[state_index] == NULL){
+		return;
+	}
+
+	//Go through the entire populated closed array
+	for(int i = 0; i < max_index; i++){
+		//If at any point we find that the states are the same
+		if(states_same(closed[i], succ_states[state_index])){
+			//Free both the internal memory and the state pointer itself
+			destroy_state(succ_states[state_index]);
+			free(succ_states[state_index]);
+			//Set to null as a warning
+			succ_states[state_index] = NULL;
+			//Break out of the loop and exit
+			break;
+		}
+	}
+	//If we get here, we know that the state was not repeating
+}
+
+
+/**
  * Use an A* search algorithm to solve the 15-puzzle problem by implementing the A* main loop. If the solve function 
  * is successful, it will print the resulting solution path to the console as well.  
  */
@@ -610,6 +638,11 @@ int solve(){
 	int iter = 0;
 	//Put the start state into the fringe to begin the search
 	fringe = start_state; 
+	//We will keep a reference to the next available closed index	
+	int next_closed_index = 0;
+	//Make the initial allocation for closed
+	closed = malloc(sizeof(struct state*) * closed_max_size);
+
 	//Maintain a pointer for the current state in the search
 	struct state* curr_state;
 
@@ -663,7 +696,7 @@ int solve(){
 			//Print out the number of unique configurations generated
 			printf("Unique configurations generated by solver: %ld\n", num_unique_configs);
 			//Print out total memory consumption in Megabytes
-			printf("Memory consumed: %.2f MB\n", (sizeof(struct state) + N*N*sizeof(int)) * num_unique_configs / 1048576.0);
+			printf("Memory consumed: %.2f MB\n", (sizeof(struct state) + N*N*sizeof(short)) * num_unique_configs / 1048576.0);
 			//Print out CPU time(NOT wall time) spent
 			printf("Total CPU time spent: %.7f seconds\n\n", time_spent_CPU);	
 			printf("------------------------------------------------------\n\n");
@@ -678,8 +711,10 @@ int solve(){
 		//Go through each of the successor states, and check for repetition/update prediction function
 		for(int i = 0; i < 4; i++){
 			//Check each successor state against fringe and closed to see if it is repeating
-			check_repeating(i,fringe); 
-			check_repeating(i,closed);
+			//Check the current state in the closed array
+			check_repeating_closed(next_closed_index, i);
+			//Check against fringe
+			check_repeating_fringe(i); 
 			//Update the prediction function on states that don't repeat
 			update_prediction_function(i); 
 		}
@@ -687,11 +722,20 @@ int solve(){
 		//Add all necessary states to fringe now that we have checked for repeats and updated predictions 
 		//Additionally, we need to update the num_unique_configs, this will be done in merge_to_fringe 
 		merge_to_fringe(); 
-		
-		//Move the current state into closed, insert at head("Push")
-		curr_state->next=closed;
-		//Maintain closed properly
-		closed=curr_state;
+
+		//Add to closed
+		//If we run out of space, we can expand
+		if(next_closed_index == closed_max_size){
+			//Double closed max size
+			closed_max_size *= 2;
+			//Reallocate space for closed
+			closed = realloc(closed, sizeof(struct state*) * closed_max_size);
+		}
+
+		//Put curr_state into closed
+		closed[next_closed_index] = curr_state;
+		//Keep track of the next closed index
+		next_closed_index++;
 
 		//For very complex problems, print the iteration count to the console for a sanity check
 		if(iter > 1 && iter % 1000 == 0) {
