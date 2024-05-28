@@ -339,7 +339,7 @@ void update_prediction_function(int i){
 				//If the tiles are swapped, we have a linear conflict
 				if(left > right){
 					//To be more informed, we should add 2 moves for EACH time we have to swap
-					linear_conflicts += 1;
+					linear_conflicts++;
 				}
 			}	
 		}
@@ -379,7 +379,7 @@ void update_prediction_function(int i){
 				//If above is more than below, we have a linear conflict
 				if(above > below){
 					//To be more informed, we should add 2 moves for EACH time we have to swap
-					linear_conflicts += 1;				
+					linear_conflicts++;				
 				}
 			}
 		}
