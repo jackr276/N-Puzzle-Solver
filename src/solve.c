@@ -42,8 +42,8 @@ struct state* goal_state;
 struct state* fringe = NULL;
 //Closed is an array containing all sets previously examined. This is used to avoid repeating
 struct state** closed;
-//Define an initial starting size of 2000
-int closed_max_size = 2000;
+//Define an initial starting size of 5000
+int closed_max_size = 5000;
 //Every time a state is expanded, at most 4 successor states will be created
 struct state* succ_states[4];
 /* ========================================================== */
@@ -711,9 +711,10 @@ int solve(){
 		//Go through each of the successor states, and check for repetition/update prediction function
 		for(int i = 0; i < 4; i++){
 			//Check each successor state against fringe and closed to see if it is repeating
-			check_repeating_fringe(i); 
 			//Check the current state in the closed array
 			check_repeating_closed(next_closed_index, i);
+			//Check against fringe
+			check_repeating_fringe(i); 
 			//Update the prediction function on states that don't repeat
 			update_prediction_function(i); 
 		}

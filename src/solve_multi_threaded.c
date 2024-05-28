@@ -60,8 +60,8 @@ struct state* goal_state;
 struct state* fringe = NULL;
 //Closed is an array containing all sets previously examined. This is used to avoid repeating
 struct state** closed;
-//Define an initial starting size of 2000
-int closed_max_size = 2000;
+//Define an initial starting size of 5000
+int closed_max_size = 5000;
 //Every time a state is expanded, at most 4 successor states will be created
 struct state* succ_states[4];
 /* ========================================================== */
