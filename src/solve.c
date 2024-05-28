@@ -710,6 +710,11 @@ int solve(){
 
 		//Go through each of the successor states, and check for repetition/update prediction function
 		for(int i = 0; i < 4; i++){
+			//If the state is already null, there is no point in further exploration
+			if(succ_states[i] == NULL){
+				continue;
+			}
+
 			//Check each successor state against fringe and closed to see if it is repeating
 			//Check the current state in the closed array
 			check_repeating_closed(next_closed_index, i);
