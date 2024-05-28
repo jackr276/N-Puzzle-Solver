@@ -42,7 +42,7 @@ struct state* goal_state;
 struct state* fringe = NULL;
 //Closed is an array containing all sets previously examined. This is used to avoid repeating
 struct state** closed;
-//Define an initial starting size of 200
+//Define an initial starting size of 2000
 int closed_max_size = 2000;
 //Every time a state is expanded, at most 4 successor states will be created
 struct state* succ_states[4];
@@ -569,17 +569,17 @@ int states_same(struct state* a, struct state* b){
 
 
 /**
- * Check to see if the state at position i in the given linkedList is repeating. If it is, free it and
+ * Check to see if the state at position i in the fringe is repeating. If it is, free it and
  * set the pointer to be null
  */
-void check_repeating_fringe(int i, struct state* fringe_head){ 	
+void check_repeating_fringe(int i){ 	
 	//If succ_states[i] is NULL, no need to check anything
 	if(succ_states[i] == NULL){
 		return;
 	}
 
 	//Get a cursor to iterate over the linkedList	
-	struct state* cursor = fringe_head;
+	struct state* cursor = fringe;
 	//Go through the linkedList, if we ever find an element that's the same, break out and free the pointer
 	while(cursor != NULL){
 		//If the states match, we free the pointer and exit the loop
@@ -598,19 +598,31 @@ void check_repeating_fringe(int i, struct state* fringe_head){
 	}
 }
 
+
+/**
+ * Check for repeats in the closed array. Since we don't need any priority queue functionality,
+ * using closed as an array is a major speedup for us
+ */
 void check_repeating_closed(int max_index, int state_index){
+	//If this has already been made null, simply return
 	if(succ_states[state_index] == NULL){
 		return;
 	}
 
+	//Go through the entire populated closed array
 	for(int i = 0; i < max_index; i++){
+		//If at any point we find that the states are the same
 		if(states_same(closed[i], succ_states[state_index])){
+			//Free both the internal memory and the state pointer itself
 			destroy_state(succ_states[state_index]);
 			free(succ_states[state_index]);
+			//Set to null as a warning
 			succ_states[state_index] = NULL;
-			return;
+			//Break out of the loop and exit
+			break;
 		}
 	}
+	//If we get here, we know that the state was not repeating
 }
 
 
@@ -699,7 +711,7 @@ int solve(){
 		//Go through each of the successor states, and check for repetition/update prediction function
 		for(int i = 0; i < 4; i++){
 			//Check each successor state against fringe and closed to see if it is repeating
-			check_repeating_fringe(i,fringe); 
+			check_repeating_fringe(i); 
 			//Check the current state in the closed array
 			check_repeating_closed(next_closed_index, i);
 			//Update the prediction function on states that don't repeat
