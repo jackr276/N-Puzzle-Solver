@@ -610,7 +610,7 @@ void check_repeating_closed(int max_index, int state_index){
 	}
 
 	//Go through the entire populated closed array
-	for(int i = 0; i < max_index; i++){
+	for(int i = max_index - 1; i > -1; i--){
 		//If at any point we find that the states are the same
 		if(states_same(closed[i], succ_states[state_index])){
 			//Free both the internal memory and the state pointer itself
