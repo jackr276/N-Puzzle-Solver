@@ -120,5 +120,5 @@ In this example, I've told the program to create a 4x4 puzzle with an initial co
 >Everything below this point is still experimental and a work in progress. Unfortunately, due a busy schedule, I have not had enough time to refine the pattern database heuristic to the point that I would like to, but basic functionality has been achieved with it, and there have even been some promising initial results using it.
 
 ## Future Work and Potentials for Improvement
-THere would be a significant improvement to solver speed if the "fringe" priority queue were implemented as a self-resizing and shifting array, as opposed to a linked list.
+For future work, there are other heuristics, like walking distance, that could be used in both the single and multithreaded version of the solver to potentially improve the speed.
 
