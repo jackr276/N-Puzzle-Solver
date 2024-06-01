@@ -14,37 +14,25 @@
 #include <time.h>
 #include "puzzle.h"
 
-/* ======================================= Global Variables/Declarations ================================= */
-
-/* The following global variables are defined for convenience */
-//N is the NxN size of the puzzle, defined by the user
-int N;
-//Keep track of how many unique configs we've created
-long num_unique_configs = 0;
-//The starting and goal states
-//Every time a state is expanded, at most 4 successor states will be created
-struct state* succ_states[4];
-/* =========================================================================================================== */
-
 
 /**
  * States will be merged into the fringe linked list in a priority queue fashion by their total_cost values. The lower the value,
  * the higher the priority. This function merges the state pointed to by i into the fringe.
  * Note: This function assumes that succ_states[i] is NOT NULL, must be checked by caller
  */
-void priority_queue_insert(int i){
+void priority_queue_insert(struct state* statePtr){
 	//Initialize the cursor to be the start of the fringe
 	struct state* cursor = fringe;
 
 	//Grab the priority for convenience
-	int priority = succ_states[i]->total_cost;
+	int priority = statePtr->total_cost;
 
 	//Special case: inserting at the head
 	if(cursor == NULL || priority < cursor->total_cost){
 		//Set the succ_states[i] to point to the old head(fringe)
-		succ_states[i]->next = fringe;
+		statePtr->next = fringe;
 		//Set fringe to the succ_states[i]
-		fringe = succ_states[i]; //Exit once done
+		fringe = statePtr; //Exit once done
 		return;
 	}
 
@@ -57,33 +45,16 @@ void priority_queue_insert(int i){
 	//Perform the insertion, check for special cases(like the cursor being the tail)
 	if(cursor->next == NULL){
 		//If this is the case, we have the tail, so just append the succ_states[i]
-		cursor->next = succ_states[i];
+		cursor->next = statePtr;
 	} else {
 		//Otherwise, we have to break the linked list and insert succ_states[i] into the right spot
 		//Save the next state
 		struct state* temp = cursor->next;
 		//Insert succ_states[i] after cursor
-		cursor->next = succ_states[i];
+		cursor->next = statePtr;
 		//Reattach the rest of the linked list
-		succ_states[i]->next = temp;
+		statePtr->next = temp;
 	}
-}
-
-
-/**
- * This function simply iterates through succ_states, passing the appropriate indices along to priority_queue_insert if the pointers
- * are not null
- */
-void merge_to_fringe(){ 
-	//Iterate through succ_states, if the given state is not null, call the priority_queue_insert function on it
-	for(int i = 0; i < 4; i++){
-		if(succ_states[i] != NULL){
-			//If it isn't null, we also know that we have one more unique config, so increment our counter
-			num_unique_configs++;
-			//Insert into queue
-			priority_queue_insert(i);
-		}
-	}	
 }
 
 
@@ -91,8 +62,7 @@ void merge_to_fringe(){
  * Update the prediction function for the state pointed to by succ_states[i]. If this pointer is null, simply skip updating
  * and return. This is a generic algorithm, so it will work for any size N
  */ 
-void update_prediction_function(int i){
-	struct state* statePtr = succ_states[i];
+void update_prediction_function(struct state* statePtr, int N){
 	//If statePtr is null, this state was a repeat and has been freed, so don't calculate anything
 	if(statePtr == NULL){
 		return;
@@ -242,87 +212,6 @@ void update_prediction_function(int i){
 	statePtr->total_cost = statePtr->heuristic_cost + statePtr->current_travel;
 }
 
-
-/**
- * A simple function that swaps two tiles in the provided state
- * Note: The swap function assumes all row positions are valid, this must be checked by the caller
- */
-void swap(int row1, int column1, int row2, int column2, struct state* statePtr){
-	//Store the first tile in a temp variable
-	short tile = statePtr->tiles[row1][column1];
-	//Put the tile from row2, column2 into row1, column1
-	statePtr->tiles[row1][column1] = statePtr->tiles[row2][column2];
-	//Put the temp in row2, column2
-	statePtr->tiles[row2][column2] = tile;
-}
-
-
-/**
- * Move the 0 slider down by 1 row
- */
-void move_down(struct state* statePtr){
-	//Utilize the swap function, move the zero_row down by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr);	
-	//Increment the zero_row to keep the position accurate
-	statePtr->zero_row++;
-}
-
-
-/**
- * Move the 0 slider right by 1 column
- */
-void move_right(struct state* statePtr){
-	//Utilize the swap function, move the zero_column right by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr);	
-	//Increment the zero_column to keep the position accurate
-	statePtr->zero_column++;
-}
-
-
-/**
- * Move the 0 slider up by 1 row
- */
-void move_up(struct state* statePtr){
-	//Utilize the swap function, move the zero_row up by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr);	
-	//Decrement the zero_row to keep the position accurate
-	statePtr->zero_row--;
-}
-
-
-/**
- * Move the 0 slider left by 1 column
- */
-void move_left(struct state* statePtr){
-	//Utilize the swap function, move the zero_column left by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row , statePtr->zero_column-1, statePtr);	
-	//Decrement the zero_column to keep the position accurate
-	statePtr->zero_column--;
-}
-
-
-/**
- * Performs a "deep copy" from the predecessor to the successor
- */
-void copy_state(struct state* predecessor, struct state* successor){
-	//Copy over the tiles array
-	for(int i = 0; i < N; i++){
-		for(int j = 0; j < N; j++){
-			//Copy tile by tile
-			successor->tiles[i][j] = predecessor->tiles[i][j];
-		}
-	}
-
-	//Initialize the current travel to the predecessor travel + 1
-	successor->current_travel = predecessor->current_travel+1;
-	//Copy the zero row and column position
-	successor->zero_row = predecessor->zero_row;
-	successor->zero_column = predecessor->zero_column;
-	//Initialize the successor's next to be null
-	successor->next = NULL;
-	//Set the successors predecessor
-	successor->predecessor = predecessor;
-}
 
 
 /**
@@ -479,12 +368,14 @@ void check_repeating_closed(int max_index, int state_index){
  * Use an A* search algorithm to solve the 15-puzzle problem by implementing the A* main loop. If the solve function 
  * is successful, it will print the resulting solution path to the console as well.  
  */
-int solve(){
+int solve(int* N){
 	//Get the CPU clock start time
 	clock_t begin_CPU = clock();
 
 	//We will keep track of the number of iterations as a sanity check for large problems
 	int iter = 0;
+	//Keep track of the number of unique configurations made
+	int num_unique_configs = 0;
 	//Put the start state into the fringe to begin the search
 	fringe = start_state; 
 	//We will keep a reference to the next available closed index	
@@ -495,6 +386,7 @@ int solve(){
 	//Maintain a pointer for the current state in the search
 	struct state* curr_state;
 
+	struct state* succ_states[4];
 
 	//Algorithm main loop -- while there are still states to be expanded, keep iterating until we find a solution
 	while (fringe != NULL){
@@ -534,7 +426,7 @@ int solve(){
 
 			//Print out the solution path in order
 			while(solution_path != NULL){
-				print_state(solution_path);
+				print_state(solution_path, N);
 				solution_path = solution_path->next;
 			}	
 
@@ -543,7 +435,7 @@ int solve(){
 			//Print out the path length
 			printf("Optimal solution path length: %d\n", pathlen);
 			//Print out the number of unique configurations generated
-			printf("Unique configurations generated by solver: %ld\n", num_unique_configs);
+			printf("Unique configurations generated by solver: %d\n", num_unique_configs);
 			//Print out total memory consumption in Megabytes
 			printf("Memory consumed: %.2f MB\n", (sizeof(struct state) + N*N*sizeof(short)) * num_unique_configs / 1048576.0);
 			//Print out CPU time(NOT wall time) spent
@@ -575,7 +467,7 @@ int solve(){
 	
 		//Add all necessary states to fringe now that we have checked for repeats and updated predictions 
 		//Additionally, we need to update the num_unique_configs, this will be done in merge_to_fringe 
-		merge_to_fringe(); 
+		num_unique_configs += merge_to_fringe(succ_states); 
 
 		//Add to closed
 		//If we run out of space, we can expand
@@ -611,6 +503,9 @@ int solve(){
  * line arguments
  */
 int main(int argc, char** argv){
+	//The size of our N puzzle
+	int N;
+
 	//If the user put in a non-integer or nonpositive integer, print an error
 	if(sscanf(argv[1], "%d", &N) != 1 || N < 1){
 		printf("Incorrect type of program arguments.\n");
@@ -632,7 +527,8 @@ int main(int argc, char** argv){
 	argv += 1;
 
 	//Initialize the goal and start states 
-	initialize_start_goal(argv);
+	initialize_start_goal(argv, &N);
+
 	//Call the solve() funciton and hand off the rest of the program execution to it
-	return solve();
+	return solve(&N);
 }
