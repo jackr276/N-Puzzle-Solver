@@ -438,19 +438,19 @@ void merge_to_closed(struct state* statePtr){
  * the higher the priority. This function merges the state pointed to by i into the fringe.
  * Note: This function assumes that succ_states[i] is NOT NULL, must be checked by caller
  */
-void priority_queue_insert(struct state* statePtr){
+void priority_queue_insert(struct state** statePtr){
 	//Initialize the cursor to be the start of the fringe
 	struct state* cursor = fringe;
 
 	//Grab the priority for convenience
-	int priority = statePtr->total_cost;
+	int priority = (*statePtr)->total_cost;
 
 	//Special case: inserting at the head
 	if(cursor == NULL || priority < cursor->total_cost){
 		//Set the succ_states[i] to point to the old head(fringe)
-		statePtr->next = fringe;
+		(*statePtr)->next = fringe;
 		//Set fringe to the succ_states[i]
-		fringe = statePtr;
+		fringe = *statePtr;
 		//Exit once done
 		return;
 	}
@@ -464,15 +464,15 @@ void priority_queue_insert(struct state* statePtr){
 	//Perform the insertion, check for special cases(like the cursor being the tail)
 	if(cursor->next == NULL){
 		//If this is the case, we have the tail, so just append the succ_states[i]
-		cursor->next = statePtr;
+		cursor->next = *statePtr;
 	} else {
 		//Otherwise, we have to break the linked list and insert succ_states[i] into the right spot
 		//Save the next state
 		struct state* temp = cursor->next;
 		//Insert succ_states[i] after cursor
-		cursor->next = statePtr;
+		cursor->next = *statePtr;
 		//Reattach the rest of the linked list
-		statePtr->next = temp;
+		(*statePtr)->next = temp;
 	}
 }
 
@@ -561,7 +561,7 @@ int merge_to_fringe(struct state* successors[4]){
 			//If it isn't null, we also know that we have one more unique config, so increment our counterS
 			valid_successors++;
 			//Insert into queue
-			priority_queue_insert(successors[i]);
+			priority_queue_insert(&successors[i]);
 		}
 	}
 

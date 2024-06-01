@@ -97,7 +97,7 @@ int solve(int N, struct state* start_state, struct state* goal_state){
 	struct state* successors[4];
 
 	//Put the start state into the fringe to begin the search
-	priority_queue_insert(start_state);
+	priority_queue_insert(&start_state);
 
 	printf("here");
 	//Initialize the closed list
