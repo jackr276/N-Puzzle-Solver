@@ -1,5 +1,6 @@
 /**
- * Author: Jack Robbins This program implements an A* search algorithm to find the shortest solve path for the 15-puzzle problem game. 
+ * Author: Jack Robbins 
+ * This program implements an A* search algorithm to find the shortest solve path for the 15-puzzle problem game. 
  * It takes in an N-puzzle problem starting configuration in row-major order as a command line argument, following a number N for the
  * NxN size of the puzzle and prints out the full solution path to the problem, step by step, if such a solution exists.
  *
@@ -13,6 +14,7 @@
 #include <time.h>
 
 
+/* ======================================= Global Variables/Declarations ================================= */
 /**
  * Defines a type of state, which is a structure, that represents a configuration in the gem puzzle game
  */
@@ -46,7 +48,7 @@ struct state** closed;
 int closed_max_size = 5000;
 //Every time a state is expanded, at most 4 successor states will be created
 struct state* succ_states[4];
-/* ========================================================== */
+/* =========================================================================================================== */
 
 
 /**

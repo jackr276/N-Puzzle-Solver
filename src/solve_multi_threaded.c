@@ -17,8 +17,11 @@
 #include <pthread.h>
 
 
+
+/* =================================== Global Variables/Declarations ===================== */
 /**
- * Defines a type of state, which is a structure, that represents a configuration in the gem puzzle game
+ * Defines a type of state, which is a structure, that represents a configuration
+ * in the gem puzzle game
  */
 struct state{
 	//Define a dynamic 2D array for the tiles since we have a variable puzzle size
@@ -64,7 +67,7 @@ struct state** closed;
 int closed_max_size = 5000;
 //Every time a state is expanded, at most 4 successor states will be created
 struct state* succ_states[4];
-/* ========================================================== */
+/* ========================================================================================== */
 
 
 /**
