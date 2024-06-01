@@ -4,12 +4,12 @@
  * struct definitions for said puzzles
  */
 
-
 #ifndef PUZZLE_H
 #define PUZZLE_H
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 /**
 * Defines a type of state, which is a structure, that represents a configuration in the gem puzzle game
@@ -28,6 +28,7 @@ struct state {
 };
 
 
+/*================================= Global variables for convenience =========================== */
 //The starting and goal states
 struct state* start_state;
 struct state* goal_state;
@@ -37,6 +38,7 @@ struct state* fringe = NULL;
 struct state** closed;
 //Define an initial starting size of 5000
 int closed_max_size = 5000;
+/*============================================================================================== */
 
 
 /**
@@ -172,6 +174,30 @@ void move_left(struct state* statePtr){
 	//Decrement the zero_column to keep the position accurate
 	statePtr->zero_column--;
 }
+
+
+/**
+ * A simple helper function that will tell if two states are the same. To be used for filtering
+ */
+int states_same(struct state* a, struct state* b, int N){
+	//Efficiency speedup -- if zero row and column aren't equal, return false
+	if(a->zero_row != b->zero_row || a->zero_column != b->zero_column){
+		return 0;
+	}
+
+	//Go through each row in the dynamic tile matrix in both states
+	for(int i = 0; i < N; i++){
+		//We can use memcmp to efficiently compare the space pointed to by each pointer
+		if(memcmp(a->tiles[i], b->tiles[i], sizeof(short) * N) != 0){
+			//If we find a difference, return 0
+			return 0;
+		}
+	}
+
+	//Return 1 if same	
+	return 1;
+}
+
 
 
 
@@ -452,7 +478,65 @@ void priority_queue_insert(struct state* statePtr){
 
 
 /**
- * This function simply iterates through succ_states, passing the appropriate indices along to priority_queue_insert if the pointers
+ * Check to see if the state at position i in the fringe is repeating. If it is, free it and
+ * set the pointer to be null
+ */
+void check_repeating_fringe(struct state* statePtr, int N){ 	
+	//If succ_states[i] is NULL, no need to check anything
+	if(statePtr == NULL){
+		return;
+	}
+
+	//Get a cursor to iterate over the linkedList	
+	struct state* cursor = fringe;
+	//Go through the linkedList, if we ever find an element that's the same, break out and free the pointer
+	while(cursor != NULL){
+		//If the states match, we free the pointer and exit the loop
+		if(states_same(statePtr, cursor, N)){
+			//Properly tear down the dynamic array in the state to avoid memory leaks
+			destroy_state(statePtr, N);
+			//Free the pointer to the state
+			free(statePtr);
+			//Set the pointer to be null as a warning
+			statePtr = NULL;
+			break;
+		}
+		//Move to the next state in the linkedList
+		cursor = cursor->next;
+		//Once we get here, the state at i either survived and isn't null, or was freed and set to NULL
+	}
+}
+
+
+/**
+ * Check for repeats in the closed array. Since we don't need any priority queue functionality,
+ * using closed as an array is a major speedup for us
+ */
+void check_repeating_closed(struct state* statePtr, int max_index, int N){
+	//If this has already been made null, simply return
+	if(statePtr == NULL){
+		return;
+	}
+
+	//Go through the entire populated closed array
+	for(int i = max_index - 1; i > -1; i--){
+		//If at any point we find that the states are the same
+		if(states_same(closed[i], statePtr, N)){
+			//Free both the internal memory and the state pointer itself
+			destroy_state(statePtr, N);
+			free(statePtr);
+			//Set to null as a warning
+			statePtr = NULL;
+			//Break out of the loop and exit
+			break;
+		}
+	}
+	//If we get here, we know that the state was not repeating
+}
+
+
+/**
+ * This function simply iterates through successors, passing the appropriate states along to priority_queue_insert if the pointers
  * are not null
  */
 int merge_to_fringe(struct state* successors[4]){ 
@@ -462,8 +546,8 @@ int merge_to_fringe(struct state* successors[4]){
 	//Iterate through succ_states, if the given state is not null, call the priority_queue_insert function on it
 	for(int i = 0; i < 4; i++){
 		if(successors[i] != NULL){
-			//If it isn't null, we also know that we have one more unique config, so increment our counter
-			valid_successors++
+			//If it isn't null, we also know that we have one more unique config, so increment our counterS
+			valid_successors++;
 			//Insert into queue
 			priority_queue_insert(successors[i]);
 		}
