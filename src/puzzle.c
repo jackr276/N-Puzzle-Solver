@@ -338,13 +338,13 @@ void update_prediction_function(struct state* statePtr, const int N){
  * state. It also initializes the goal state mathematically, as it is always the same
  * Note: Assumes a correct number of command line arguments(16 numbers), must be checked by caller
  */
-void initialize_start_goal(char** argv, struct state* start_state, struct state* goal_state, const int N){
+void initialize_start_goal(char** argv, struct state** start_state, struct state** goal_state, const int N){
 	/* Begin by creating the start state */
 
 	//Create the start state itself
-	start_state = (struct state*)malloc(sizeof(struct state));
+	*start_state = (struct state*)malloc(sizeof(struct state));
 	//Dynamically allocate memory needed in the start_state
-	initialize_state(start_state, N);
+	initialize_state(*start_state, N);
 
 	//Start at 1, argv[0] is program name and argv has been adjusted up by 1 to only contain the start state information
 	int index = 1;
@@ -355,35 +355,35 @@ void initialize_start_goal(char** argv, struct state* start_state, struct state*
 		for (int j = 0; j < N; j++){
 			//Grab the specific tile number from the arguments and place it into the start state
 			tile=atoi(argv[index++]);
-			start_state->tiles[i][j] = tile;
+			(*start_state)->tiles[i][j] = tile;
 
 			//If we found the zero tile, update the zero row and column
 			if(tile == 0){
-				start_state->zero_row = i;
-				start_state->zero_column = j;
+				(*start_state)->zero_row = i;
+				(*start_state)->zero_column = j;
 			}
 		}
 	}
 
 	//Initialize everything else in the start state
-	start_state->total_cost = 0;
-	start_state->current_travel = 0;
-	start_state->heuristic_cost = 0;
-	start_state->next = NULL;
+	(*start_state)->total_cost = 0;
+	(*start_state)->current_travel = 0;
+	(*start_state)->heuristic_cost = 0;
+	(*start_state)->next = NULL;
 	//Important -- must have no predecessor(root of search tree)
-	start_state->predecessor = NULL;
+	(*start_state)->predecessor = NULL;
 
 	//Print to the console for the user
 	printf("\nInitial state\n");
-	print_state(start_state, N);
+	print_state(*start_state, N);
 
 
 	/* Now we create the goal state */	
 	
 	//Create the goal state itself
-	goal_state = (struct state*)malloc(sizeof(struct state));
+	*goal_state = (struct state*)malloc(sizeof(struct state));
 	//Dynamically allocate the memory needed in the goal_state
-	initialize_state(goal_state, N);	
+	initialize_state(*goal_state, N);	
 
 	int row, col;
 	//To create the goal state, place the numbers 1-15 in the appropriate locations
@@ -391,22 +391,22 @@ void initialize_start_goal(char** argv, struct state* start_state, struct state*
 		//We can mathematically find row and column positions for inorder numbers
 		row = (num - 1) / N;
 		col = (num - 1) % N;
-		goal_state->tiles[row][col] = num;
+		(*goal_state)->tiles[row][col] = num;
 	}
 
 	//0 is always at the last spot in the goal state
-	goal_state->tiles[N-1][N-1] = 0;
+	(*goal_state)->tiles[N-1][N-1] = 0;
 
 	//Initialize everything else in the goal state
-	goal_state->zero_row = goal_state->zero_column = N-1;
-	goal_state->total_cost = 0;
-	goal_state->current_travel = 0;
-	goal_state->heuristic_cost = 0;
-	goal_state->next=NULL;
+	(*goal_state)->zero_row = (*goal_state)->zero_column = N-1;
+	(*goal_state)->total_cost = 0;
+	(*goal_state)->current_travel = 0;
+	(*goal_state)->heuristic_cost = 0;
+	(*goal_state)->next=NULL;
 
 	//Print to the console for the user
 	printf("Goal state\n");
-	print_state(goal_state, N);
+	print_state(*goal_state, N);
 }
 
 
@@ -450,7 +450,8 @@ void priority_queue_insert(struct state* statePtr){
 		//Set the succ_states[i] to point to the old head(fringe)
 		statePtr->next = fringe;
 		//Set fringe to the succ_states[i]
-		fringe = statePtr; //Exit once done
+		fringe = statePtr;
+		//Exit once done
 		return;
 	}
 

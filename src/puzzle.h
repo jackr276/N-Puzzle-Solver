@@ -41,7 +41,7 @@ void move_up(struct state*);
 void move_left(struct state*);
 int states_same(struct state*, struct state*, const int);
 void update_prediction_function(struct state*, int);
-void initialize_start_goal(char**, struct state*, struct state*, const int N);
+void initialize_start_goal(char**, struct state**, struct state**, const int N);
 void initialize_closed(void);
 void merge_to_closed(struct state*);
 void priority_queue_insert(struct state*);

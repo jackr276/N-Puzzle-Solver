@@ -99,6 +99,7 @@ int solve(int N, struct state* start_state, struct state* goal_state){
 	//Put the start state into the fringe to begin the search
 	priority_queue_insert(start_state);
 
+	printf("here");
 	//Initialize the closed list
 	initialize_closed();
 
@@ -236,8 +237,8 @@ int main(int argc, char** argv){
 	struct state* goal_state;
 
 	//Initialize the goal and start states 
-	initialize_start_goal(argv, start_state, goal_state, N);
-
+	initialize_start_goal(argv, &start_state, &goal_state, N);
+	
 	//Call the solve() funciton and hand off the rest of the program execution to it
 	return solve(N, start_state, goal_state);
 }
