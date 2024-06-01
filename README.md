@@ -121,4 +121,5 @@ In this example, I've told the program to create a 4x4 puzzle with an initial co
 
 ## Future Work and Potentials for Improvement
 For future work, there are other heuristics, like walking distance, that could be used in both the single and multithreaded version of the solver to potentially improve the speed.
+My next idea to implement will be implementing the priority queue as a min-heap.
 
