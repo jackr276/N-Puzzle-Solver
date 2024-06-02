@@ -1,9 +1,10 @@
 /**
  * Author: Jack Robbins
- * This c file contains the implementations for functions in puzzle.h
+ * This c file contains the implementations for functions in puzzle.h, that are used by the solver,
+ * in order to minimize repeated code
  */
 
-
+//Link to puzzle.h
 #include "puzzle.h"
 
 
@@ -83,19 +84,19 @@ void copy_state(struct state* predecessor, struct state* successor, const int N)
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N; j++){
 			//Copy tile by tile
-			(successor)->tiles[i][j] = (predecessor)->tiles[i][j];
+			successor->tiles[i][j] = predecessor->tiles[i][j];
 		}
 	}
 
 	//Initialize the current travel to the predecessor travel + 1
-	(successor)->current_travel = (predecessor)->current_travel+1;
+	successor->current_travel = predecessor->current_travel+1;
 	//Copy the zero row and column position
-	(successor)->zero_row = (predecessor)->zero_row;
-	(successor)->zero_column = (predecessor)->zero_column;
+	successor->zero_row = predecessor->zero_row;
+	successor->zero_column = predecessor->zero_column;
 	//Initialize the successor's next to be null
-	(successor)->next = NULL;
+	successor->next = NULL;
 	//Set the successors predecessor
-	(successor)->predecessor = predecessor;
+	successor->predecessor = predecessor;
 }
 
 

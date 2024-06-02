@@ -14,7 +14,7 @@ fi
 gcc -Wall -Wextra generate_start_config.c puzzle.c -o generate_start_config 
 gcc -Wall -Wextra solve.c puzzle.c -o solve
 #IMPORTANT - must link pthread library when compiling
-gcc -Wall -Wextra -pthread solve_multi_threaded.c -o solve_multi_threaded
+gcc -Wall -Wextra -pthread solve_multi_threaded.c puzzle.c -o solve_multi_threaded
 
 #Get the puzzle size from user
 read -p "Enter a positive integer for the NxN puzzle size: " SIZE

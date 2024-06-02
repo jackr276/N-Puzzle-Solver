@@ -30,6 +30,7 @@ struct state {
 };
 
 
+/* Method Protoypes */
 void initialize_state(struct state*, const int);
 void destroy_state(struct state*, const int);
 void print_state(struct state*, const int, int);
