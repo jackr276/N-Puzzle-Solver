@@ -96,10 +96,10 @@ void* generator_worker(void* thread_params){
 	//Only perform the checks if moved is not null
 	if(moved != NULL){
 		//Now we must check for repeating
-		check_repeating_closed(&moved, N);
-		check_repeating_fringe(&moved, N);
+		check_repeating_closed(&parameters->successors[option], N);
+		check_repeating_fringe(&parameters->successors[option], N);
 		//Update prediction function
-		update_prediction_function(moved, N);
+		update_prediction_function(parameters->successors[option], N);
 	}
 
 	//Threadwork done, no return value will be used
@@ -172,7 +172,6 @@ int solve(int N, struct state* start_state, struct state* goal_state){
 		//Remove or "pop" the head of the fringe linked list -- because fringe is a priority queue, this is the most
 		//promising state to explore next
 		curr_state = dequeue();
-
 		//Check to see if we have found the solution. If we did, we will print out the solution path and stop
 		if(states_same(curr_state, goal_state, N)){
 			//Stop the clock if we find a solution
