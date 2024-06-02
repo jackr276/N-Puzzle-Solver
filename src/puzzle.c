@@ -418,6 +418,11 @@ void initialize_closed(){
 	closed = (struct state**)malloc(sizeof(struct state*) * closed_max_size);
 }
 
+
+/**
+ * A helper function that merges the given statePtr into closed. This function also automatically
+ * resizes closed, so the caller does not have to maintain the array
+ */
 void merge_to_closed(struct state* statePtr){
 	//If we run out of space, we can expand
 	if(next_closed_index == closed_max_size){
@@ -479,13 +484,22 @@ void priority_queue_insert(struct state* statePtr){
 }
 
 
+/**
+ * Dequeues the head or first state off of the priority queue and returns a reference to it. 
+ * Maintains the fringe pointer by removing the dequeued state
+ */
 struct state* dequeue(){
+	//Save the dequeued state
 	struct state* dequeued = fringe;
+	//"delete" the state that we just dequeued
 	fringe = fringe->next;
 	return dequeued;
 }
 
 
+/**
+ * A very simple helper function that lets solve know if the fringe is empty
+ */
 int fringe_empty(){
 	return fringe == NULL;
 }
@@ -566,7 +580,7 @@ int merge_to_fringe(struct state* successors[4]){
 			priority_queue_insert(successors[i]);
 		}
 	}
-
+	//Return how many valid successors that we had
 	return valid_successors;
 }
 
