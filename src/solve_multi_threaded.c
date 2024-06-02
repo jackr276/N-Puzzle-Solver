@@ -29,6 +29,7 @@ struct thread_params{
 	struct state** successors;
 };
 
+//Always fails on copy state in the 11th thread
 
 /**
  * This worker thread function generates and checks the validity of a successor that is made by 
