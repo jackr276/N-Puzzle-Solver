@@ -12,102 +12,7 @@
 #include <string.h>
 //For random move generation
 #include <time.h>
-
-//Gem puzzle is 4 rows by 4 columns by default, but this will be changed by user input
-int N = 4; 
-
-
-//Define a simplified state struct for the generation process. We only need the tiles and zero_row and column
-struct simplified_state{
-	//Define the tiles as an N by N array
-	int** tiles;
-	short zero_row, zero_column;
-};
-
-
-/**
- * A simple functions that swaps two tiles in the provided state
- * Note: The swap function assumes all row positions are valid, this must be checked by the caller
- */
-void swap(int row1,int column1,int row2,int column2, struct simplified_state* statePtr){
-	//Store the first tile in a temp variable
-	int tile = statePtr->tiles[row1][column1];
-	//Put the tile from row2, column2 into row1, column1
-	statePtr->tiles[row1][column1] = statePtr->tiles[row2][column2];
-	//Put the temp in row2, column2
-	statePtr->tiles[row2][column2] = tile;
-}
-
-
-/**
- * Move the 0 slider down by 1 row
- */
-void move_down(struct simplified_state* statePtr){
-	//Utilize the swap function to move the zero row down by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr); 
-	//Increment the zero row to keep the position accurate
-	statePtr->zero_row++;
-}
-
-
-/**
- * Move the 0 slider right by 1 column
- */
-void move_right(struct simplified_state* statePtr){
-	//Utilize the swap function to move the zero column right by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr); 
-	//Increment the zero_column to keep the position accurate
-	statePtr->zero_column++;
-}
-
-
-/**
- * Move the 0 slider up by 1 row
- */
-void move_up(struct simplified_state* statePtr){
-	//Utilize the swap function to move the zero row up by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr); 
-	//Decrement the zero_row to keep the position accurate
-	statePtr->zero_row--;
-}
-
-
-/**
- * Move the 0 left by 1 column
- */
-void move_left(struct simplified_state* statePtr){
-	//Utilize the swap function to move the zero_column left by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column-1, statePtr); 
-	//Decrement the zero_column to keep the position accurate
-	statePtr->zero_column--;
-}
-
-
-/**
- * Prints out a state either in matrix format(option 0) or single row format(option 1)
- */
-void print_state(struct simplified_state* statePtr, int format) {
-	//Go through each tile in the state, printing out its value 
-	for (int i = 0; i < N; i++) {
-		for (int j = 0; j < N; j++){
-			//Support printing of states with 2 or 3 digit max integers
-			if(N < 11){
-				//With numbers less than 11, N^2 is at most 99, so only 2 digits needed
-				printf("%2d ", statePtr->tiles[i][j]);
-			} else {
-				//Ensures printing of large states will not be botched
-				printf("%3d ", statePtr->tiles[i][j]);
-			}
-		}
-		//If the option is for matrix format, put a newline after every row
-		if(format==0){
-			printf("\n");
-		}
-	}
-
-	//For formatting
-	printf("\n");
-}
+#include "puzzle.h"
 
 
 /**
@@ -123,7 +28,7 @@ int main(int argc, char** argv) {
 	}
 
 	//Once we know there are the right amount of arguments, attempt to scan the number of moves into numMoves
-	int num_moves;
+	int num_moves, N;
 	//If scanning into a decimnal doesn't work, we know something went wrong
 	if(sscanf(argv[1], "%d", &N) != 1 || sscanf(argv[2], "%d", &num_moves) != 1){
 		//Print an error and exit
@@ -133,17 +38,17 @@ int main(int argc, char** argv) {
 	}
 
 	//Create the simplified state that we will use for generation
-	struct simplified_state* statePtr = (struct simplified_state*)malloc(sizeof(struct simplified_state));
+	struct state* statePtr = (struct state*)malloc(sizeof(struct state));
 	//Allocate the space for each of the rows
-	statePtr->tiles = malloc(sizeof(int*)*N);
+	statePtr->tiles = malloc(sizeof(short*)*N);
 	//Allocate the space for each row
 	for(int i = 0; i < N; i++){
-		statePtr->tiles[i] = malloc(N*sizeof(int));
+		statePtr->tiles[i] = malloc(N*sizeof(short));
 	}
 
 	int row, col;
 	//Now generate the goal state. Once we create the goal state, we will "mess it up" according to the input number
-	for(int index = 1; index < N*N; index++){
+	for(short index = 1; index < N*N; index++){
 		//Mathematically generate row position for goal by integer dividing the number by N
 		row = (index-1) / N;
 		//Mathematically generate column position for goal by finding remainder of row division
@@ -201,11 +106,11 @@ int main(int argc, char** argv) {
 
 	//Print the initial state in puzzle(matrix) format
 	printf("Initial state in puzzle format:\n");
-	print_state(statePtr, 0);
+	print_state(statePtr, N, 0);
 
 	//Print the initial state for actual use in solve.c
 	printf("Initial state in one line, for use in solve.c:\n");
-	print_state(statePtr, 1);
+	print_state(statePtr, N, 1);
 
 	return 0;
 }

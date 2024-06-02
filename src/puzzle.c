@@ -49,9 +49,10 @@ void destroy_state(struct state* statePtr, const int N){
 
 
 /**
- * Prints out a state by printing out the positions in the 4x4 grid
+ * Prints out a state by printing out the positions in the 4x4 grid. If option is 1, print the
+ * state out in one line
  */
-void print_state(struct state* statePtr, const int N){
+void print_state(struct state* statePtr, const int N, int option){
 	//Go through tile by tile and print out
 	for (int i = 0; i < N; i++) {
 		for (int j = 0; j < N; j++){
@@ -64,8 +65,11 @@ void print_state(struct state* statePtr, const int N){
 				printf("%3d ", statePtr->tiles[i][j]);
 			}
 		}
-		//Print a newline to represent the row change
-		printf("\n");
+		//Support printing in a single line
+		if(!option){
+			//Print a newline to represent the row change
+			printf("\n");
+		}
 	}
 	printf("\n");
 }
@@ -99,13 +103,13 @@ void copy_state(struct state** predecessor, struct state** successor, const int 
  * A simple function that swaps two tiles in the provided state
  * Note: The swap function assumes all row positions are valid, this must be checked by the caller
  */
-static void swap(int row1, int column1, int row2, int column2, struct state** statePtr){
+static void swap(int row1, int column1, int row2, int column2, struct state* statePtr){
 	//Store the first tile in a temp variable
-	short tile = (*statePtr)->tiles[row1][column1];
+	short tile = statePtr->tiles[row1][column1];
 	//Put the tile from row2, column2 into row1, column1
-	(*statePtr)->tiles[row1][column1] = (*statePtr)->tiles[row2][column2];
+	statePtr->tiles[row1][column1] = statePtr->tiles[row2][column2];
 	//Put the temp in row2, column2
-	(*statePtr)->tiles[row2][column2] = tile;
+	statePtr->tiles[row2][column2] = tile;
 }
 
 
@@ -113,44 +117,44 @@ static void swap(int row1, int column1, int row2, int column2, struct state** st
 /**
  * Move the 0 slider down by 1 row
  */
-void move_down(struct state** statePtr){
+void move_down(struct state* statePtr){
 	//Utilize the swap function, move the zero_row down by 1
-	swap((*statePtr)->zero_row, (*statePtr)->zero_column, (*statePtr)->zero_row+1, (*statePtr)->zero_column, statePtr);	
+	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr);	
 	//Increment the zero_row to keep the position accurate
-	(*statePtr)->zero_row++;
+	statePtr->zero_row++;
 }
 
 
 /**
  * Move the 0 slider right by 1 column
  */
-void move_right(struct state** statePtr){
+void move_right(struct state* statePtr){
 	//Utilize the swap function, move the zero_column right by 1
-	swap((*statePtr)->zero_row, (*statePtr)->zero_column, (*statePtr)->zero_row, (*statePtr)->zero_column+1, statePtr);	
+	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr);	
 	//Increment the zero_column to keep the position accurate
-	(*statePtr)->zero_column++;
+	statePtr->zero_column++;
 }
 
 
 /**
  * Move the 0 slider up by 1 row
  */
-void move_up(struct state** statePtr){
+void move_up(struct state* statePtr){
 	//Utilize the swap function, move the zero_row up by 1
-	swap((*statePtr)->zero_row, (*statePtr)->zero_column, (*statePtr)->zero_row-1, (*statePtr)->zero_column, statePtr);	
+	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr);	
 	//Decrement the zero_row to keep the position accurate
-	(*statePtr)->zero_row--;
+	statePtr->zero_row--;
 }
 
 
 /**
  * Move the 0 slider left by 1 column
  */
-void move_left(struct state** statePtr){
+void move_left(struct state* statePtr){
 	//Utilize the swap function, move the zero_column left by 1
-	swap((*statePtr)->zero_row, (*statePtr)->zero_column, (*statePtr)->zero_row , (*statePtr)->zero_column-1, statePtr);	
+	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column-1, statePtr);	
 	//Decrement the zero_column to keep the position accurate
-	(*statePtr)->zero_column--;
+	statePtr->zero_column--;
 }
 
 
@@ -375,7 +379,7 @@ void initialize_start_goal(char** argv, struct state** start_state, struct state
 
 	//Print to the console for the user
 	printf("\nInitial state\n");
-	print_state(*start_state, N);
+	print_state(*start_state, N, 0);
 
 
 	/* Now we create the goal state */	
@@ -406,7 +410,7 @@ void initialize_start_goal(char** argv, struct state** start_state, struct state
 
 	//Print to the console for the user
 	printf("Goal state\n");
-	print_state(*goal_state, N);
+	print_state(*goal_state, N, 0);
 }
 
 

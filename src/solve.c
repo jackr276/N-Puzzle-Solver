@@ -250,7 +250,7 @@ int main(int argc, char** argv){
 
 	//Initialize the goal and start states 
 	initialize_start_goal(argv, &start_state, &goal_state, N);
-	print_state(goal_state, N);
+	print_state(goal_state, N, 0);
 
 	printf("Running solve.\n");
 	//Call the solve() funciton and hand off the rest of the program execution to it

@@ -32,12 +32,12 @@ struct state {
 
 void initialize_state(struct state**, const int);
 void destroy_state(struct state*, const int);
-void print_state(struct state*, const int);
+void print_state(struct state*, const int, int);
 void copy_state(struct state**, struct state**, const int);
-void move_down(struct state**);
-void move_right(struct state**);
-void move_up(struct state**);
-void move_left(struct state**);
+void move_down(struct state*);
+void move_right(struct state*);
+void move_up(struct state*);
+void move_left(struct state*);
 int states_same(struct state*, struct state*, const int);
 void update_prediction_function(struct state**, int);
 void initialize_start_goal(char**, struct state**, struct state**, const int N);
