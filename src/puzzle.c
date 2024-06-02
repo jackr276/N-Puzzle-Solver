@@ -23,13 +23,13 @@ int next_closed_index = 0;
  * The initialize_state function takes in a pointer to a state and reserves the appropriate space for the dynamic array
  * that holds the tiles 
  */
-void initialize_state(struct state** statePtr, const int N){
+void initialize_state(struct state* statePtr, const int N){
 	//Declare all of the pointers needed for each row
-	(*statePtr)->tiles = (short**)malloc(sizeof(short*) * N);
+	statePtr->tiles = (short**)malloc(sizeof(short*) * N);
 
 	//For each row, allocate space for N integers
 	for(int i = 0; i < N; i++){
-		(*statePtr)->tiles[i] = (short*)malloc(sizeof(short) * N);
+		statePtr->tiles[i] = (short*)malloc(sizeof(short) * N);
 	}
 }
 
@@ -78,24 +78,24 @@ void print_state(struct state* statePtr, const int N, int option){
 /**
  * Performs a "deep copy" from the predecessor to the successor
  */
-void copy_state(struct state** predecessor, struct state** successor, const int N){
+void copy_state(struct state* predecessor, struct state* successor, const int N){
 	//Copy over the tiles array
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N; j++){
 			//Copy tile by tile
-			(*successor)->tiles[i][j] = (*predecessor)->tiles[i][j];
+			(successor)->tiles[i][j] = (predecessor)->tiles[i][j];
 		}
 	}
 
 	//Initialize the current travel to the predecessor travel + 1
-	(*successor)->current_travel = (*predecessor)->current_travel+1;
+	(successor)->current_travel = (predecessor)->current_travel+1;
 	//Copy the zero row and column position
-	(*successor)->zero_row = (*predecessor)->zero_row;
-	(*successor)->zero_column = (*predecessor)->zero_column;
+	(successor)->zero_row = (predecessor)->zero_row;
+	(successor)->zero_column = (predecessor)->zero_column;
 	//Initialize the successor's next to be null
-	(*successor)->next = NULL;
+	(successor)->next = NULL;
 	//Set the successors predecessor
-	(*successor)->predecessor = *predecessor;
+	(successor)->predecessor = predecessor;
 }
 
 
@@ -185,14 +185,14 @@ int states_same(struct state* a, struct state* b, const int N){
  * Update the prediction function for the state pointed to by succ_states[i]. If this pointer is null, simply skip updating
  * and return. This is a generic algorithm, so it will work for any size N
  */ 
-void update_prediction_function(struct state** statePtr, const int N){
+void update_prediction_function(struct state* statePtr, const int N){
 	//If statePtr is null, this state was a repeat and has been freed, so don't calculate anything
-	if(*statePtr == NULL){
+	if(statePtr == NULL){
 		return;
 	}
 
 	//The current_travel of the state has already been updated by stateCopy, so we only need to find the heuristic_cost
-	(*statePtr)->heuristic_cost = 0;
+	(statePtr)->heuristic_cost = 0;
 
 	/**
 	* For heuristic_cost, we will use the manhattan distance from each tile to where it should be.
@@ -210,7 +210,7 @@ void update_prediction_function(struct state** statePtr, const int N){
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N; j++){
 			//grab the number to be examined
-			selected_num = (*statePtr)->tiles[i][j];
+			selected_num = (statePtr)->tiles[i][j];
 
 			//We do not care about 0 as it can move, so skip it
 			if(selected_num == 0){
@@ -228,7 +228,7 @@ void update_prediction_function(struct state** statePtr, const int N){
 			manhattan_distance = abs(i - goal_rowCor) + abs(j - goal_colCor);	
 		
 			//Add manhattan distance for each tile
-			(*statePtr)->heuristic_cost += manhattan_distance;
+			(statePtr)->heuristic_cost += manhattan_distance;
 		}
 	}
 		
@@ -251,7 +251,7 @@ void update_prediction_function(struct state** statePtr, const int N){
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N-1; j++){
 			//Grab the leftmost tile that we'll be comparing to
-			left = (*statePtr)->tiles[i][j];
+			left = (statePtr)->tiles[i][j];
 
 			//If this tile is 0, it's irrelevant so do not explore further
 			if(left == 0){
@@ -261,7 +261,7 @@ void update_prediction_function(struct state** statePtr, const int N){
 			//Now go through every tile in the row after left, this is what makes this generalized linear conflict
 			for(int k = j+1; k < N; k++){
 				//Grab right tile for convenience
-				right = (*statePtr)->tiles[i][k];
+				right = (statePtr)->tiles[i][k];
 
 				//Again, if the tile is 0, no use in wasting cycles with it
 				if(right == 0){
@@ -291,7 +291,7 @@ void update_prediction_function(struct state** statePtr, const int N){
 	for(int i = 0; i < N-1; i++){
 		for(int j = 0; j < N; j++){
 			//Grab the abovemost tile that we'll be comparing to
-			above = (*statePtr)->tiles[i][j];
+			above = (statePtr)->tiles[i][j];
 
 			//If this tile is 0, it's irrelevant so do not explore further
 			if(above == 0){
@@ -301,7 +301,7 @@ void update_prediction_function(struct state** statePtr, const int N){
 			//Now go through every tile in the column below "above", this is what makes it generalized linear conflict
 			for(int k = i+1; k < N; k++){
 				//Grab the below tile for convenience
-				below = (*statePtr)->tiles[k][j];
+				below = (statePtr)->tiles[k][j];
 
 				//We don't care about the 0 tile, skip if we find it
 				if(below == 0){
@@ -329,10 +329,10 @@ void update_prediction_function(struct state** statePtr, const int N){
 
 	//Once we have calculated the number of linear conflicts, we add it into the heuristic cost
 	//For each linear conflict, a minimum of 2 additional moves are required to swap tiles, so add 2 to the heuristic_cost
-	(*statePtr)->heuristic_cost += linear_conflicts * 2;
+	(statePtr)->heuristic_cost += linear_conflicts * 2;
 
 	//Once we have the heuristic_cost, update the total_cost
-	(*statePtr)->total_cost = (*statePtr)->heuristic_cost + (*statePtr)->current_travel;
+	(statePtr)->total_cost = (statePtr)->heuristic_cost + (statePtr)->current_travel;
 }
 
 
@@ -342,11 +342,9 @@ void update_prediction_function(struct state** statePtr, const int N){
  * state. It also initializes the goal state mathematically, as it is always the same
  * Note: Assumes a correct number of command line arguments(16 numbers), must be checked by caller
  */
-void initialize_start_goal(char** argv, struct state** start_state, struct state** goal_state, const int N){
+void initialize_start_goal(char** argv, struct state* start_state, struct state* goal_state, const int N){
 	/* Begin by creating the start state */
 
-	//Create the start state itself
-	*start_state = (struct state*)malloc(sizeof(struct state));
 	//Dynamically allocate memory needed in the start_state
 	initialize_state(start_state, N);
 
@@ -359,33 +357,31 @@ void initialize_start_goal(char** argv, struct state** start_state, struct state
 		for (int j = 0; j < N; j++){
 			//Grab the specific tile number from the arguments and place it into the start state
 			tile=atoi(argv[index++]);
-			(*start_state)->tiles[i][j] = tile;
+			(start_state)->tiles[i][j] = tile;
 
 			//If we found the zero tile, update the zero row and column
 			if(tile == 0){
-				(*start_state)->zero_row = i;
-				(*start_state)->zero_column = j;
+				(start_state)->zero_row = i;
+				(start_state)->zero_column = j;
 			}
 		}
 	}
 
 	//Initialize everything else in the start state
-	(*start_state)->total_cost = 0;
-	(*start_state)->current_travel = 0;
-	(*start_state)->heuristic_cost = 0;
-	(*start_state)->next = NULL;
+	(start_state)->total_cost = 0;
+	(start_state)->current_travel = 0;
+	(start_state)->heuristic_cost = 0;
+	(start_state)->next = NULL;
 	//Important -- must have no predecessor(root of search tree)
-	(*start_state)->predecessor = NULL;
+	(start_state)->predecessor = NULL;
 
 	//Print to the console for the user
 	printf("\nInitial state\n");
-	print_state(*start_state, N, 0);
+	print_state(start_state, N, 0);
 
 
 	/* Now we create the goal state */	
 	
-	//Create the goal state itself
-	*goal_state = (struct state*)malloc(sizeof(struct state));
 	//Dynamically allocate the memory needed in the goal_state
 	initialize_state(goal_state, N);	
 
@@ -395,22 +391,22 @@ void initialize_start_goal(char** argv, struct state** start_state, struct state
 		//We can mathematically find row and column positions for inorder numbers
 		row = (num - 1) / N;
 		col = (num - 1) % N;
-		(*goal_state)->tiles[row][col] = num;
+		(goal_state)->tiles[row][col] = num;
 	}
 
 	//0 is always at the last spot in the goal state
-	(*goal_state)->tiles[N-1][N-1] = 0;
+	(goal_state)->tiles[N-1][N-1] = 0;
 
 	//Initialize everything else in the goal state
-	(*goal_state)->zero_row = (*goal_state)->zero_column = N-1;
-	(*goal_state)->total_cost = 0;
-	(*goal_state)->current_travel = 0;
-	(*goal_state)->heuristic_cost = 0;
-	(*goal_state)->next=NULL;
+	(goal_state)->zero_row = (goal_state)->zero_column = N-1;
+	(goal_state)->total_cost = 0;
+	(goal_state)->current_travel = 0;
+	(goal_state)->heuristic_cost = 0;
+	(goal_state)->next=NULL;
 
 	//Print to the console for the user
 	printf("Goal state\n");
-	print_state(*goal_state, N, 0);
+	print_state(goal_state, N, 0);
 }
 
 
@@ -498,9 +494,9 @@ int fringe_empty(){
  * Check to see if the state at position i in the fringe is repeating. If it is, free it and
  * set the pointer to be null
  */
-void check_repeating_fringe(struct state* statePtr, const int N){ 	
+void check_repeating_fringe(struct state** statePtr, const int N){ 	
 	//If succ_states[i] is NULL, no need to check anything
-	if(statePtr == NULL){
+	if(*statePtr == NULL){
 		return;
 	}
 
@@ -509,13 +505,13 @@ void check_repeating_fringe(struct state* statePtr, const int N){
 	//Go through the linkedList, if we ever find an element that's the same, break out and free the pointer
 	while(cursor != NULL){
 		//If the states match, we free the pointer and exit the loop
-		if(states_same(statePtr, cursor, N)){
+		if(states_same(*statePtr, cursor, N)){
 			//Properly tear down the dynamic array in the state to avoid memory leaks
-			destroy_state(statePtr, N);
+			destroy_state(*statePtr, N);
 			//Free the pointer to the state
-			free(statePtr);
+			free(*statePtr);
 			//Set the pointer to be null as a warning
-			statePtr = NULL;
+			*statePtr = NULL;
 			break;
 		}
 		//Move to the next state in the linkedList
@@ -529,21 +525,21 @@ void check_repeating_fringe(struct state* statePtr, const int N){
  * Check for repeats in the closed array. Since we don't need any priority queue functionality,
  * using closed as an array is a major speedup for us
  */
-void check_repeating_closed(struct state* statePtr, const int N){
+void check_repeating_closed(struct state** statePtr, const int N){
 	//If this has already been made null, simply return
-	if(statePtr == NULL){
+	if(*statePtr == NULL){
 		return;
 	}
 
 	//Go through the entire populated closed array
 	for(int i = next_closed_index - 1; i > -1; i--){
 		//If at any point we find that the states are the same
-		if(states_same(closed[i], statePtr, N)){
+		if(states_same(closed[i], *statePtr, N)){
 			//Free both the internal memory and the state pointer itself
-			destroy_state(statePtr, N);
-			free(statePtr);
+			destroy_state(*statePtr, N);
+			free(*statePtr);
 			//Set to null as a warning
-			statePtr = NULL;
+			*statePtr = NULL;
 			//Break out of the loop and exit
 			break;
 		}

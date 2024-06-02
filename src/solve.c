@@ -18,7 +18,7 @@
  * This function generates all possible successors to a state and stores them in the successor array
  * Note: 4 successors are not always possible, if a successor isn't possible, NULL will be put in its place 
  */
-void generate_successors(struct state** predecessor, struct state** successors, int N){
+void generate_successors(struct state* predecessor, struct state** successors, int N){
 	//Create four pointers, one for each possible move, and initialize to NULL by default
 	struct state* leftMove = NULL;
 	struct state* rightMove = NULL;
@@ -26,57 +26,57 @@ void generate_successors(struct state** predecessor, struct state** successors, 
 	struct state* downMove = NULL;
 	
 	//Generate successor by moving left one if possible
-	if((*predecessor)->zero_column > 0){
+	if(predecessor->zero_column > 0){
 		//Create a new state
 		leftMove = (struct state*)malloc(sizeof(struct state));
 		//Dynamically allocate the memory needed in leftMove
-		initialize_state(&leftMove, N);
+		initialize_state(leftMove, N);
 		//Perform a deep copy on the state
-		copy_state(predecessor, &leftMove, N);
+		copy_state(predecessor, leftMove, N);
 		//Move right by one
-		move_left(&leftMove);
+		move_left(leftMove);
 	}
 	//Put leftMove into the array
 	successors[0] = leftMove;
 
 	//Generate successor by moving right one if possible
-	if((*predecessor)->zero_column < N-1){
+	if(predecessor->zero_column < N-1){
 		//Create a new state
 		rightMove = (struct state*)malloc(sizeof(struct state));
 		//Dynamically allocate the memory needed in rightMove
-		initialize_state(&rightMove, N);
+		initialize_state(rightMove, N);
 		//Perform a deep copy on the state
-		copy_state(predecessor, &rightMove, N);
+		copy_state(predecessor, rightMove, N);
 		//Move right by one
-		move_right(&rightMove);
+		move_right(rightMove);
 	}
 	//Put rightMove into the array
 	successors[1] = rightMove;
 	
 	//Generate successor by moving down one if possible
-	if((*predecessor)->zero_row < N-1){
+	if(predecessor->zero_row < N-1){
 		//Create a new state
 		downMove = (struct state*)malloc(sizeof(struct state));
 		//Dynamically allocate the memory needed in downMove
-		initialize_state(&downMove, N);
+		initialize_state(downMove, N);
 		//Perform a deep copy on the state
-		copy_state(predecessor, &downMove, N);
+		copy_state(predecessor, downMove, N);
 		//Move down by one
-		move_down(&downMove);
+		move_down(downMove);
 	}
 	//Put downMove into the array
 	successors[2] = downMove;
 	
 	//Generate successor by moving down one if possible
-	if((*predecessor)->zero_row > 0){
+	if(predecessor->zero_row > 0){
 		//Create a new state
 		upMove = (struct state*)malloc(sizeof(struct state));
 		//Dynamically allocate the memory needed in upMove
-		initialize_state(&upMove, N);
+		initialize_state(upMove, N);
 		//Perform a deep copy on the state
-		copy_state(predecessor, &upMove, N);
+		copy_state(predecessor, upMove, N);
 		//Move up by one
-		move_up(&upMove);
+		move_up(upMove);
 	}
 	//Put upMove into the array
 	successors[3] = upMove;
@@ -96,12 +96,11 @@ int solve(int N, struct state* start_state, struct state* goal_state){
 	//Keep track of the number of unique configurations made
 	int num_unique_configs = 0;
 	//Define an array for holding successor states. We can generate at most 4 each time
-	struct state** successors = (struct state**)malloc(sizeof(struct state*) * 4);
+	struct state* successors[4];
 
 	//Put the start state into the fringe to begin the search
 	priority_queue_insert(start_state);
 
-	printf("Running solve 2\n");
 	//Initialize the closed list
 	initialize_closed();
 
@@ -145,7 +144,7 @@ int solve(int N, struct state* start_state, struct state* goal_state){
 
 			//Print out the solution path in order
 			while(solution_path != NULL){
-				print_state(solution_path, N);
+				print_state(solution_path, N, 0);
 				solution_path = solution_path->next;
 			}	
 
@@ -165,16 +164,9 @@ int solve(int N, struct state* start_state, struct state* goal_state){
 			return 0;	
 		}
 
-		//PROBLEM IS HERE, something to do with accessing the tile array
-
 		//Generate successors to the current state once we know it isn't a solution
-		generate_successors(&curr_state, successors, N);
+		generate_successors(curr_state, successors, N);
 
-		for(int i = 0; i < 4; i++){
-			printf("%d. \n", i + 1);
-			print_state(successors[i], N);
-		}
-/*
 		//Go through each of the successor states, and check for repetition/update prediction function
 		for(int i = 0; i < 4; i++){
 			//If the state is already null, there is no point in further exploration
@@ -184,14 +176,13 @@ int solve(int N, struct state* start_state, struct state* goal_state){
 
 			//Check each successor state against fringe and closed to see if it is repeating
 			//Check the current state in the closed array
-			check_repeating_closed(successors[i], N);
+			check_repeating_closed(&successors[i], N);
 			//Check against fringe
-			check_repeating_fringe(successors[i], N);
+			check_repeating_fringe(&successors[i], N);
 			//Update the prediction function on states that don't repeat
-			update_prediction_function(&successors[i], N); 
+			update_prediction_function(successors[i], N); 
 		}
 
-		printf("here");
 		//Add all necessary states to fringe now that we have checked for repeats and updated predictions 
 		//Additionally, we need to update the num_unique_configs, this will be done in merge_to_fringe 
 		num_unique_configs += merge_to_fringe(successors); 
@@ -210,8 +201,7 @@ int solve(int N, struct state* start_state, struct state* goal_state){
 	
 	//If we end up here, fringe became NULL with no goal configuration found, so there is no solution
 	printf("No solution.\n");
-	*/
-}
+	
 	return 0;
 }
 
@@ -244,16 +234,13 @@ int main(int argc, char** argv){
 	//Important: Move the address of argv up by 1 so that initialize_start_goal can only see the initial config 
 	argv += 1;
 
-	//The starting and goal states
-	struct state* start_state;
-	struct state* goal_state;
+	//The starting and goal states, must create and reserve space
+	struct state* start_state = (struct state*)malloc(sizeof(struct state));
+	struct state* goal_state = (struct state*)malloc(sizeof(struct state));
 
 	//Initialize the goal and start states 
-	initialize_start_goal(argv, &start_state, &goal_state, N);
-	print_state(goal_state, N, 0);
+	initialize_start_goal(argv, start_state, goal_state, N);
 
-	printf("Running solve.\n");
 	//Call the solve() funciton and hand off the rest of the program execution to it
-	solve(N, start_state, goal_state);
-	return 0;
+	return solve(N, start_state, goal_state);
 }

@@ -39,12 +39,8 @@ int main(int argc, char** argv) {
 
 	//Create the simplified state that we will use for generation
 	struct state* statePtr = (struct state*)malloc(sizeof(struct state));
-	//Allocate the space for each of the rows
-	statePtr->tiles = malloc(sizeof(short*)*N);
-	//Allocate the space for each row
-	for(int i = 0; i < N; i++){
-		statePtr->tiles[i] = malloc(N*sizeof(short));
-	}
+	//Iniitialize the state with helper function
+	initialize_state(statePtr, N);
 
 	int row, col;
 	//Now generate the goal state. Once we create the goal state, we will "mess it up" according to the input number
@@ -67,7 +63,7 @@ int main(int argc, char** argv) {
 	srand(time(NULL));
 
 	//Counter for while loop
-	int i=0;
+	int i = 0;
 
 	//A variable to store our random move numbers in
 	int random_move;

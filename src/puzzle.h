@@ -30,24 +30,24 @@ struct state {
 };
 
 
-void initialize_state(struct state**, const int);
+void initialize_state(struct state*, const int);
 void destroy_state(struct state*, const int);
 void print_state(struct state*, const int, int);
-void copy_state(struct state**, struct state**, const int);
+void copy_state(struct state*, struct state*, const int);
 void move_down(struct state*);
 void move_right(struct state*);
 void move_up(struct state*);
 void move_left(struct state*);
 int states_same(struct state*, struct state*, const int);
-void update_prediction_function(struct state**, int);
-void initialize_start_goal(char**, struct state**, struct state**, const int N);
+void update_prediction_function(struct state*, int);
+void initialize_start_goal(char**, struct state*, struct state*, const int N);
 void initialize_closed(void);
 void merge_to_closed(struct state*);
 void priority_queue_insert(struct state*);
 struct state* dequeue();
 int fringe_empty();
-void check_repeating_fringe(struct state*, const int);
-void check_repeating_closed(struct state*, const int);
+void check_repeating_fringe(struct state**, const int);
+void check_repeating_closed(struct state**, const int);
 int merge_to_fringe(struct state*[4]);
 
 #endif /* PUZZLE_H */
