@@ -7,9 +7,6 @@
  */
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 //For random move generation
 #include <time.h>
 #include "puzzle.h"
