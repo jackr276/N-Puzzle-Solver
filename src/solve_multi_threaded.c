@@ -97,8 +97,8 @@ void* generator_worker(void* thread_params){
 	if(moved != NULL){
 		//Now we must check for repeating
 		//Important -- we need to modify the state in successors, not the local copy moved
-		check_repeating_closed(&parameters->successors[option], N);
-		check_repeating_fringe(&parameters->successors[option], N);
+		check_repeating_closed(&(parameters->successors[option]), N);
+		check_repeating_fringe(&(parameters->successors[option]), N);
 		//Update prediction function
 		update_prediction_function(parameters->successors[option], N);
 	}

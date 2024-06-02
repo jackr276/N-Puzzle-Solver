@@ -174,9 +174,9 @@ int solve(int N, struct state* start_state, struct state* goal_state){
 
 			//Check each successor state against fringe and closed to see if it is repeating
 			//Check the current state in the closed array
-			check_repeating_closed(&successors[i], N);
+			check_repeating_closed(&(successors[i]), N);
 			//Check against fringe
-			check_repeating_fringe(&successors[i], N);
+			check_repeating_fringe(&(successors[i]), N);
 			//Update the prediction function on states that don't repeat
 			update_prediction_function(successors[i], N); 
 		}
