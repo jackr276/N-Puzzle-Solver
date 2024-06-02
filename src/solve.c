@@ -18,7 +18,7 @@
  * This function generates all possible successors to a state and stores them in the successor array
  * Note: 4 successors are not always possible, if a successor isn't possible, NULL will be put in its place 
  */
-void generate_successors(struct state** predecessor, struct state* successors[4], int N){
+void generate_successors(struct state** predecessor, struct state** successors, int N){
 	//Create four pointers, one for each possible move, and initialize to NULL by default
 	struct state* leftMove = NULL;
 	struct state* rightMove = NULL;

@@ -16,7 +16,6 @@ struct state** closed;
 int closed_max_size = 5000;
 //We will keep a reference to the next available closed index
 int next_closed_index = 0;
-struct state* ex;
 /*============================================================================================== */
 
 
