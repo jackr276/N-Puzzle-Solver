@@ -99,8 +99,9 @@ int solve(int N, struct state* start_state, struct state* goal_state){
 	//Put the start state into the fringe to begin the search
 	priority_queue_insert(start_state);
 
-	//Initialize the closed list
+	//Initialize the closed and fringe data structures 
 	initialize_closed();
+	initialize_fringe();
 
 	//Maintain a pointer for the current state in the search
 	struct state* curr_state;
