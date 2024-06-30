@@ -462,6 +462,14 @@ static void swap(struct state** a, struct state** b){
 
 
 /**
+ * A simple helper function that calculates the parent of a certain index
+ */
+static int parent_index(int index){
+	return (index - 1) / 2;
+}
+
+
+/**
  * States will be merged into fringe according to their priority values. The lower the total cost,
  * the higher the priority. Since fringe is a minHeap, we will insert accordingly
  */
@@ -474,7 +482,22 @@ void priority_queue_insert(struct state* statePtr){
 		fringe = (struct state**)realloc(fringe, fringe_max_size);
 	}
 
+	//Insert value at the very end
+	fringe[next_fringe_index] = statePtr;
+	//Increment the next fringe index
+	next_fringe_index++;
 
+	//The current index will be used to reheapify after this addition
+	int current_index = next_fringe_index - 1;
+
+	//As long as we're in valid bounds, and the priorities are flipped of parent and child are wrong
+	while (current_index > 0 && fringe[parent_index(current_index)]->total_cost > fringe[current_index]->total_cost){
+		//Swap the two values
+		swap(&fringe[parent_index(current_index)], &fringe[current_index]);
+
+		//Set the current index to be it's parent, and repeat the process
+		current_index = parent_index(current_index);
+	}
 }
 
 
