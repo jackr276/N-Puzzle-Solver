@@ -461,7 +461,7 @@ static void swap(struct state** a, struct state** b){
 
 
 /**
- * A simple helper function that calculates the parent of a certain index
+ * A simple helper function that calculates the parent of a certain index in the minHeap
  */
 static int parent_index(int index){
 	return (index - 1) / 2;
@@ -502,7 +502,7 @@ void priority_queue_insert(struct state* statePtr){
 
 /**
  * A recursive function that will heapify fringe following any delete operations. It takes in
- * the index to be min heapified
+ * the index to be min heapified. This is a "down heapify" because we start at the front
  */
 static void min_heapify(int index){
 	//Initialize the smallest as the index
@@ -585,6 +585,7 @@ void check_repeating_fringe(struct state** statePtr, const int N){
 			break;
 		}
 	}
+	//If we get here, we know that the state was not repeating
 }
 
 
