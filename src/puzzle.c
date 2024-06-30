@@ -6,7 +6,6 @@
 
 //Link to puzzle.h
 #include "puzzle.h"
-#include <stdlib.h>
 
 
 /*================================= Global variables for convenience =========================== */
@@ -490,7 +489,7 @@ void priority_queue_insert(struct state* statePtr){
 	//The current index will be used to reheapify after this addition
 	int current_index = next_fringe_index - 1;
 
-	//As long as we're in valid bounds, and the priorities are flipped of parent and child are wrong
+	//As long as we're in valid bounds, and the priorities of parent and child are backwards
 	while (current_index > 0 && fringe[parent_index(current_index)]->total_cost > fringe[current_index]->total_cost){
 		//Swap the two values
 		swap(&fringe[parent_index(current_index)], &fringe[current_index]);
@@ -517,8 +516,8 @@ static void min_heapify(int index){
 		smallest = left_child;
 	}
 
-	//If the right child has a lower priority than the index
-	if(right_child < next_fringe_index && fringe[right_child]->total_cost < fringe[index]->total_cost){
+	//If the right child has a lower priority than the smallest, we want to make sure we have the absolute smallest 
+	if(right_child < next_fringe_index && fringe[right_child]->total_cost < fringe[smallest]->total_cost){
 		smallest = right_child;
 	}
 
