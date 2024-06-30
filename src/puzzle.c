@@ -479,7 +479,7 @@ void priority_queue_insert(struct state* statePtr){
 		//Just double this value
 		fringe_max_size *= 2;
 		//Reallocate fringe memory	
-		fringe = (struct state**)realloc(fringe, fringe_max_size);
+		fringe = (struct state**)realloc(fringe, sizeof(struct state*) * fringe_max_size);
 	}
 
 	//Insert value at the very end
@@ -513,12 +513,12 @@ static void min_heapify(int index){
 	int right_child = index * 2 + 2;
 
 	//If the left child has a lower priority than the index
-	if(left_child < next_closed_index && fringe[left_child]->total_cost < fringe[index]->total_cost){
+	if(left_child < next_fringe_index && fringe[left_child]->total_cost < fringe[index]->total_cost){
 		smallest = left_child;
 	}
 
 	//If the right child has a lower priority than the index
-	if(right_child < next_closed_index && fringe[right_child]->total_cost < fringe[index]->total_cost){
+	if(right_child < next_fringe_index && fringe[right_child]->total_cost < fringe[index]->total_cost){
 		smallest = right_child;
 	}
 
@@ -576,7 +576,7 @@ void check_repeating_fringe(struct state** statePtr, const int N){
 	//Go through the heap, if we ever find an element that's the same, break out and free the pointer
 	for(int i = 0; i < next_fringe_index; i++){
 		//If the states match, we free the pointer and exit the loop
-		if(states_same(*statePtr, fringe[i] ,N)){
+		if(states_same(*statePtr, fringe[i], N)){
 			//Properly tear down the dynamic array in the state to avoid memory leaks
 			destroy_state(*statePtr, N);
 			//Free the pointer to the state
