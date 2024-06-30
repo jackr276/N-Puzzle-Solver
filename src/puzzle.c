@@ -9,14 +9,16 @@
 
 
 /*================================= Global variables for convenience =========================== */
-//The fringe is the set of all states open for exploration. It is maintained as a linked list
-struct state* fringe = NULL;
+//The fringe is the set of all states open for exploration. It is maintained as a minHeap(array) 
+struct state** fringe;
 //Closed is an array containing all sets previously examined. This is used to avoid repeating
 struct state** closed;
-//Define an initial starting size of 5000
+//Define an initial starting size of 5000 for fringe and closed
 int closed_max_size = 5000;
-//We will keep a reference to the next available closed index
+int fringe_max_size = 5000;
+//We will keep a reference to the next available closed and fringe indices
 int next_closed_index = 0;
+int next_fringe_index = 0;
 /*============================================================================================== */
 
 
@@ -104,7 +106,7 @@ void copy_state(struct state* predecessor, struct state* successor, const int N)
  * A simple function that swaps two tiles in the provided state
  * Note: The swap function assumes all row positions are valid, this must be checked by the caller
  */
-static void swap(int row1, int column1, int row2, int column2, struct state* statePtr){
+static void swap_tiles(int row1, int column1, int row2, int column2, struct state* statePtr){
 	//Store the first tile in a temp variable
 	short tile = statePtr->tiles[row1][column1];
 	//Put the tile from row2, column2 into row1, column1
@@ -120,7 +122,7 @@ static void swap(int row1, int column1, int row2, int column2, struct state* sta
  */
 void move_down(struct state* statePtr){
 	//Utilize the swap function, move the zero_row down by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr);	
+	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr);	
 	//Increment the zero_row to keep the position accurate
 	statePtr->zero_row++;
 }
@@ -131,7 +133,7 @@ void move_down(struct state* statePtr){
  */
 void move_right(struct state* statePtr){
 	//Utilize the swap function, move the zero_column right by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr);	
+	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr);	
 	//Increment the zero_column to keep the position accurate
 	statePtr->zero_column++;
 }
@@ -142,7 +144,7 @@ void move_right(struct state* statePtr){
  */
 void move_up(struct state* statePtr){
 	//Utilize the swap function, move the zero_row up by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr);	
+	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr);	
 	//Decrement the zero_row to keep the position accurate
 	statePtr->zero_row--;
 }
@@ -153,7 +155,7 @@ void move_up(struct state* statePtr){
  */
 void move_left(struct state* statePtr){
 	//Utilize the swap function, move the zero_column left by 1
-	swap(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column-1, statePtr);	
+	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column-1, statePtr);	
 	//Decrement the zero_column to keep the position accurate
 	statePtr->zero_column--;
 }
@@ -412,6 +414,14 @@ void initialize_start_goal(char** argv, struct state* start_state, struct state*
 
 
 /**
+ * A simple helper function that allocates memory for fringe
+ */
+void initialize_fringe(){
+	fringe = (struct state**)malloc(sizeof(struct state*) * fringe_max_size);
+}
+
+
+/**
  * A simple helper function that allocates memory for closed
  */
 void initialize_closed(){
@@ -439,60 +449,106 @@ void merge_to_closed(struct state* statePtr){
 
 }
 
+
 /**
- * States will be merged into the fringe linked list in a priority queue fashion by their total_cost values. The lower the value,
- * the higher the priority. This function merges the state pointed to by i into the fringe.
- * Note: This function assumes that succ_states[i] is NOT NULL, must be checked by caller
+ * A simple helper function that will swap two pointers in our minHeap
  */
-void priority_queue_insert(struct state* statePtr){
-	//Initialize the cursor to be the start of the fringe
-	struct state* cursor = fringe;
-
-	//Grab the priority for convenience
-	int priority = statePtr->total_cost;
-
-	//Special case: inserting at the head
-	if(cursor == NULL || priority < cursor->total_cost){
-		//Set the succ_states[i] to point to the old head(fringe)
-		statePtr->next = fringe;
-		//Set fringe to the succ_states[i]
-		fringe = statePtr;
-		//Exit once done
-		return;
-	}
-
-	//Iterate over the list as long as the next cursor's total cost is not more than priority
-	while(cursor->next != NULL && cursor->next->total_cost < priority){
-		cursor = cursor->next;	
-	}
-
-	//Once we get here, the cursor should be on the node right before the node to be inserted
-	//Perform the insertion, check for special cases(like the cursor being the tail)
-	if(cursor->next == NULL){
-		//If this is the case, we have the tail, so just append the succ_states[i]
-		cursor->next = statePtr;
-	} else {
-		//Otherwise, we have to break the linked list and insert succ_states[i] into the right spot
-		//Save the next state
-		struct state* temp = cursor->next;
-		//Insert succ_states[i] after cursor
-		cursor->next = statePtr;
-		//Reattach the rest of the linked list
-		statePtr->next = temp;
-	}
-
+static void swap(struct state** a, struct state** b){
+	struct state* temp = *a;
+	*a = *b;
+	*b = temp;
 }
 
 
 /**
- * Dequeues the head or first state off of the priority queue and returns a reference to it. 
- * Maintains the fringe pointer by removing the dequeued state
+ * A simple helper function that calculates the parent of a certain index in the minHeap
+ */
+static int parent_index(int index){
+	return (index - 1) / 2;
+}
+
+
+/**
+ * States will be merged into fringe according to their priority values. The lower the total cost,
+ * the higher the priority. Since fringe is a minHeap, we will insert accordingly
+ */
+void priority_queue_insert(struct state* statePtr){
+	//Automatic resize
+	if(next_fringe_index == fringe_max_size){
+		//Just double this value
+		fringe_max_size *= 2;
+		//Reallocate fringe memory	
+		fringe = (struct state**)realloc(fringe, sizeof(struct state*) * fringe_max_size);
+	}
+
+	//Insert value at the very end
+	fringe[next_fringe_index] = statePtr;
+	//Increment the next fringe index
+	next_fringe_index++;
+
+	//The current index will be used to reheapify after this addition
+	int current_index = next_fringe_index - 1;
+
+	//As long as we're in valid bounds, and the priorities of parent and child are backwards
+	while (current_index > 0 && fringe[parent_index(current_index)]->total_cost > fringe[current_index]->total_cost){
+		//Swap the two values
+		swap(&fringe[parent_index(current_index)], &fringe[current_index]);
+
+		//Set the current index to be it's parent, and repeat the process
+		current_index = parent_index(current_index);
+	}
+}
+
+
+/**
+ * A recursive function that will heapify fringe following any delete operations. It takes in
+ * the index to be min heapified. This is a "down heapify" because we start at the front
+ */
+static void min_heapify(int index){
+	//Initialize the smallest as the index
+	int smallest = index;
+	//Right and left children of current index
+	int left_child = index * 2 + 1;
+	int right_child = index * 2 + 2;
+
+	//If the left child has a lower priority than the index
+	if(left_child < next_fringe_index && fringe[left_child]->total_cost < fringe[index]->total_cost){
+		smallest = left_child;
+	}
+
+	//If the right child has a lower priority than the smallest, we want to make sure we have the absolute smallest 
+	if(right_child < next_fringe_index && fringe[right_child]->total_cost < fringe[smallest]->total_cost){
+		smallest = right_child;
+	}
+
+	//If we found something smaller than index, we must swap
+	if(smallest != index){
+		//Swap the two values
+		swap(&fringe[index], &fringe[smallest]);
+		//Recursively call 
+		min_heapify(smallest);
+	}
+}
+
+
+/**
+ * Dequeues by removing from the minHeap datastructure. This involves removing value at index 0,
+ * replacing it with the very last value, and calling minHeapify()
  */
 struct state* dequeue(){
-	//Save the dequeued state
-	struct state* dequeued = fringe;
-	//"delete" the state that we just dequeued
-	fringe = fringe->next;
+	//Save the pointer
+	struct state* dequeued = fringe[0];
+	
+	//Put the last element in the front to "prime" the heap
+	fringe[0] = fringe[next_fringe_index - 1];
+
+	//Decrement this value
+	next_fringe_index--;
+	
+	//Call minHeapify on index 0 to maintain the heap properly
+	min_heapify(0);
+
+	//Give the dequeued pointer back
 	return dequeued;
 }
 
@@ -501,7 +557,7 @@ struct state* dequeue(){
  * A very simple helper function that lets solve know if the fringe is empty
  */
 int fringe_empty(){
-	return fringe == NULL;
+	return next_fringe_index == 0;
 }
 
 
@@ -516,12 +572,10 @@ void check_repeating_fringe(struct state** statePtr, const int N){
 		return;
 	}
 
-	//Get a cursor to iterate over the linkedList	
-	struct state* cursor = fringe;
-	//Go through the linkedList, if we ever find an element that's the same, break out and free the pointer
-	while(cursor != NULL){
+	//Go through the heap, if we ever find an element that's the same, break out and free the pointer
+	for(int i = 0; i < next_fringe_index; i++){
 		//If the states match, we free the pointer and exit the loop
-		if(states_same(*statePtr, cursor, N)){
+		if(states_same(*statePtr, fringe[i], N)){
 			//Properly tear down the dynamic array in the state to avoid memory leaks
 			destroy_state(*statePtr, N);
 			//Free the pointer to the state
@@ -530,10 +584,8 @@ void check_repeating_fringe(struct state** statePtr, const int N){
 			*statePtr = NULL;
 			break;
 		}
-		//Move to the next state in the linkedList
-		cursor = cursor->next;
-		//Once we get here, the state at i either survived and isn't null, or was freed and set to NULL
 	}
+	//If we get here, we know that the state was not repeating
 }
 
 
