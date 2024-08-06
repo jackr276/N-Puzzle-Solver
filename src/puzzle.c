@@ -6,7 +6,6 @@
 
 //Link to puzzle.h
 #include "puzzle.h"
-#include <string.h>
 
 
 /*================================= Global variables for convenience =========================== */
@@ -36,7 +35,7 @@ void initialize_state(struct state* statePtr, const int N){
 /**
  * The destroy_state function does the exact reverse of the initialize_state function to properly free memory
  */
-void destroy_state(struct state* statePtr, const int N){
+void destroy_state(struct state* statePtr){
 	//Go through row by row, freeing each one
 	free(statePtr->tiles);
 
@@ -75,7 +74,9 @@ void print_state(struct state* statePtr, const int N, int option){
  */
 void copy_state(struct state* predecessor, struct state* successor, const int N){
 	//Copy over the tiles array
-	memcpy(predecessor->tiles, successor-> tiles, N * N * sizeof(short));
+	for(int i = 0; i < N * N; i++){
+		successor->tiles[i] = predecessor->tiles[i];
+	}
 
 	//Initialize the current travel to the predecessor travel + 1
 	successor->current_travel = predecessor->current_travel+1;
@@ -157,11 +158,17 @@ int states_same(struct state* a, struct state* b, const int N){
 		return 0;
 	}
 
-	//We can use memcmp to efficiently compare the space pointed to by each pointer
-	if(memcmp(a->tiles, b->tiles, sizeof(short) * N * N) != 0){
-		//If we find a difference, return 0
-		return 0;
+	for(int i = 0; i < N * N; i++){
+		if(a->tiles[i] != b->tiles[i]){
+			return 0;
+		}
 	}
+
+	//We can use memcmp to efficiently compare the space pointed to by each pointer
+//	if(memcmp(a->tiles, b->tiles, sizeof(short) * N * N) != 0){
+		//If we find a difference, return 0
+//		return 0;
+//	}
 
 	//Return 1 if same	
 	return 1;
@@ -558,7 +565,7 @@ void check_repeating_fringe(struct state** statePtr, const int N){
 		//If the states match, we free the pointer and exit the loop
 		if(states_same(*statePtr, fringe[i], N)){
 			//Properly tear down the dynamic array in the state to avoid memory leaks
-			destroy_state(*statePtr, N);
+			destroy_state(*statePtr);
 			//Free the pointer to the state
 			free(*statePtr);
 			//Set the pointer to be null as a warning
@@ -586,7 +593,7 @@ void check_repeating_closed(struct state** statePtr, const int N){
 		//If at any point we find that the states are the same
 		if(states_same(closed[i], *statePtr, N)){
 			//Free both the internal memory and the state pointer itself
-			destroy_state(*statePtr, N);
+			destroy_state(*statePtr);
 			free(*statePtr);
 			//Set to null as a warning
 			*statePtr = NULL;
