@@ -289,7 +289,7 @@ void update_prediction_function(struct state* statePtr, const int N){
 			//Now go through every tile in the column below "above", this is what makes it generalized linear conflict
 			for(int k = i+1; k < N; k++){
 				//Grab the below tile for convenience HERE
-				below = *(statePtr->tiles + i * N + j);
+				below = *(statePtr->tiles + k * N + j);
 
 				//We don't care about the 0 tile, skip if we find it
 				if(below == 0){
