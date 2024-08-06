@@ -54,7 +54,7 @@ void* generator_worker(void* thread_params){
 		//Perform a deep copy from predecessor to successor
 		copy_state(parameters->predecessor, moved, N);
 		//Use helper function to move left
-		move_left(moved);
+		move_left(moved, parameters->N);
 
 	//Perform a right move if option is 1 and if possible
 	} else if(option == 1 && parameters->predecessor->zero_column < N-1){
@@ -65,7 +65,7 @@ void* generator_worker(void* thread_params){
 		//Perform a deep copy from predecessor to successor
 		copy_state(parameters->predecessor, moved, N);
 		//Use helper function to move right 
-		move_right(moved);
+		move_right(moved, parameters->N);
 
 	//Perform a down move if option is 2 and if possible
 	} else if(option == 2 && parameters->predecessor->zero_row < N-1){
@@ -76,7 +76,7 @@ void* generator_worker(void* thread_params){
 		//Perform a deep copy from predecessor to successor
 		copy_state(parameters->predecessor, moved, N);
 		//Use helper function to move down	
-		move_down(moved);
+		move_down(moved, parameters->N);
 
 	//Perform an up move if option is 3 and if possible
 	} else if(option == 3 && parameters->predecessor->zero_row > 0){
@@ -87,7 +87,7 @@ void* generator_worker(void* thread_params){
 		//Perform a deep copy from predecessor to successor
 		copy_state(parameters->predecessor, moved, N);
 		//Use helper function to move up	
-		move_up(moved);
+		move_up(moved, parameters->N);
 	}
 	
 	//Whether it's null or not, place the pointer into moved

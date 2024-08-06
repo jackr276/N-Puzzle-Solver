@@ -32,7 +32,7 @@ void generate_successors(struct state* predecessor, struct state** successors, i
 		//Perform a deep copy on the state
 		copy_state(predecessor, leftMove, N);
 		//Move right by one
-		move_left(leftMove);
+		move_left(leftMove, N);
 	}
 	//Put leftMove into the array
 	successors[0] = leftMove;
@@ -46,7 +46,7 @@ void generate_successors(struct state* predecessor, struct state** successors, i
 		//Perform a deep copy on the state
 		copy_state(predecessor, rightMove, N);
 		//Move right by one
-		move_right(rightMove);
+		move_right(rightMove, N);
 	}
 	//Put rightMove into the array
 	successors[1] = rightMove;
@@ -60,7 +60,7 @@ void generate_successors(struct state* predecessor, struct state** successors, i
 		//Perform a deep copy on the state
 		copy_state(predecessor, downMove, N);
 		//Move down by one
-		move_down(downMove);
+		move_down(downMove, N);
 	}
 	//Put downMove into the array
 	successors[2] = downMove;
@@ -74,7 +74,7 @@ void generate_successors(struct state* predecessor, struct state** successors, i
 		//Perform a deep copy on the state
 		copy_state(predecessor, upMove, N);
 		//Move up by one
-		move_up(upMove);
+		move_up(upMove, N);
 	}
 	//Put upMove into the array
 	successors[3] = upMove;
