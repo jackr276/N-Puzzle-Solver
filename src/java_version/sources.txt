@@ -1,5 +1,5 @@
+./puzzle/PuzzleComparator.java
 ./puzzle/Puzzle.java
 ./puzzle/PuzzleException.java
-./puzzle/PuzzleComparator.java
 ./Main.java
 ./solver/Solver.java

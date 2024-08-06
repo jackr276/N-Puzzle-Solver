@@ -39,7 +39,6 @@ int main(int argc, char** argv) {
 	//Iniitialize the state with helper function
 	initialize_state(statePtr, N);
 
-	int row, col;
 	//Now generate the goal state. Once we create the goal state, we will "mess it up" according to the input number
 	for(short index = 1; index < N*N; index++){
 		//Put the index in the correct position
