@@ -164,12 +164,6 @@ int states_same(struct state* a, struct state* b, const int N){
 		}
 	}
 
-	//We can use memcmp to efficiently compare the space pointed to by each pointer
-//	if(memcmp(a->tiles, b->tiles, sizeof(short) * N * N) != 0){
-		//If we find a difference, return 0
-//		return 0;
-//	}
-
 	//Return 1 if same	
 	return 1;
 }
@@ -294,7 +288,7 @@ void update_prediction_function(struct state* statePtr, const int N){
 
 			//Now go through every tile in the column below "above", this is what makes it generalized linear conflict
 			for(int k = i+1; k < N; k++){
-				//Grab the below tile for convenience
+				//Grab the below tile for convenience HERE
 				below = *(statePtr->tiles + i * N + j);
 
 				//We don't care about the 0 tile, skip if we find it
