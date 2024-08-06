@@ -18,7 +18,7 @@
 */
 struct state {
    //Define a dynamic 2D array for the tiles since we have a variable puzzle size
-   short** tiles;
+   short* tiles;
    //For A*, define the total_cost, how far the tile has traveled, and heuristic cost int total_cost, current_travel, heuristic_cost;
    int total_cost, current_travel, heuristic_cost;
    //location (row and colum) of blank tile 0
@@ -35,10 +35,10 @@ void initialize_state(struct state*, const int);
 void destroy_state(struct state*, const int);
 void print_state(struct state*, const int, int);
 void copy_state(struct state*, struct state*, const int);
-void move_down(struct state*);
-void move_right(struct state*);
-void move_up(struct state*);
-void move_left(struct state*);
+void move_down(struct state*, const int);
+void move_right(struct state*, const int);
+void move_up(struct state*, const int);
+void move_left(struct state*, const int);
 int states_same(struct state*, struct state*, const int);
 void update_prediction_function(struct state*, int);
 void initialize_start_goal(char**, struct state*, struct state*, const int N);

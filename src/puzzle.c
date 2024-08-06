@@ -6,6 +6,7 @@
 
 //Link to puzzle.h
 #include "puzzle.h"
+#include <string.h>
 
 
 /*================================= Global variables for convenience =========================== */
@@ -27,13 +28,8 @@ int next_fringe_index = 0;
  * that holds the tiles 
  */
 void initialize_state(struct state* statePtr, const int N){
-	//Declare all of the pointers needed for each row
-	statePtr->tiles = (short**)malloc(sizeof(short*) * N);
-
-	//For each row, allocate space for N integers
-	for(int i = 0; i < N; i++){
-		statePtr->tiles[i] = (short*)malloc(sizeof(short) * N);
-	}
+	//Declare the array of N by N integers
+	statePtr->tiles = (short*)malloc(sizeof(short) * N * N);
 }
 
 
@@ -42,12 +38,8 @@ void initialize_state(struct state* statePtr, const int N){
  */
 void destroy_state(struct state* statePtr, const int N){
 	//Go through row by row, freeing each one
-	for(int i = 0; i < N; i++){
-		free(statePtr->tiles[i]);
-	}
-
-	//Once all rows are free, free the array of row pointers
 	free(statePtr->tiles);
+
 }
 
 
@@ -62,10 +54,10 @@ void print_state(struct state* statePtr, const int N, int option){
 			//Support printing of states with 2 or 3 digit max integers
 			if(N < 11){	
 				//With numbers less than 11, N^2 is at most 99, so only 2 digits needed
-				printf("%2d ", statePtr->tiles[i][j]);
+				printf("%2d ", *(statePtr->tiles + i * N + j));
 			} else {
 				//Ensures printing of large states will not be botched
-				printf("%3d ", statePtr->tiles[i][j]);
+				printf("%3d ", *(statePtr->tiles + i * N + j));
 			}
 		}
 		//Support printing in a single line
@@ -83,12 +75,7 @@ void print_state(struct state* statePtr, const int N, int option){
  */
 void copy_state(struct state* predecessor, struct state* successor, const int N){
 	//Copy over the tiles array
-	for(int i = 0; i < N; i++){
-		for(int j = 0; j < N; j++){
-			//Copy tile by tile
-			successor->tiles[i][j] = predecessor->tiles[i][j];
-		}
-	}
+	memcpy(predecessor->tiles, successor-> tiles, N * N * sizeof(short));
 
 	//Initialize the current travel to the predecessor travel + 1
 	successor->current_travel = predecessor->current_travel+1;
@@ -106,13 +93,13 @@ void copy_state(struct state* predecessor, struct state* successor, const int N)
  * A simple function that swaps two tiles in the provided state
  * Note: The swap function assumes all row positions are valid, this must be checked by the caller
  */
-static void swap_tiles(int row1, int column1, int row2, int column2, struct state* statePtr){
+static void swap_tiles(int row1, int column1, int row2, int column2, struct state* statePtr, const int N){
 	//Store the first tile in a temp variable
-	short tile = statePtr->tiles[row1][column1];
+	short tile = *(statePtr->tiles + row1 * N + column1);
 	//Put the tile from row2, column2 into row1, column1
-	statePtr->tiles[row1][column1] = statePtr->tiles[row2][column2];
+	*(statePtr->tiles + row1 * N + column1) = *(statePtr->tiles + row2 * N + column2);
 	//Put the temp in row2, column2
-	statePtr->tiles[row2][column2] = tile;
+	*(statePtr->tiles + row2 * N + column2) = tile;
 }
 
 
@@ -120,9 +107,9 @@ static void swap_tiles(int row1, int column1, int row2, int column2, struct stat
 /**
  * Move the 0 slider down by 1 row
  */
-void move_down(struct state* statePtr){
+void move_down(struct state* statePtr, const int N){
 	//Utilize the swap function, move the zero_row down by 1
-	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr);	
+	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row+1, statePtr->zero_column, statePtr, N);
 	//Increment the zero_row to keep the position accurate
 	statePtr->zero_row++;
 }
@@ -131,9 +118,9 @@ void move_down(struct state* statePtr){
 /**
  * Move the 0 slider right by 1 column
  */
-void move_right(struct state* statePtr){
+void move_right(struct state* statePtr, const int N){
 	//Utilize the swap function, move the zero_column right by 1
-	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr);	
+	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column+1, statePtr, N);	
 	//Increment the zero_column to keep the position accurate
 	statePtr->zero_column++;
 }
@@ -142,9 +129,9 @@ void move_right(struct state* statePtr){
 /**
  * Move the 0 slider up by 1 row
  */
-void move_up(struct state* statePtr){
+void move_up(struct state* statePtr, const int N){
 	//Utilize the swap function, move the zero_row up by 1
-	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr);	
+	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row-1, statePtr->zero_column, statePtr, N);
 	//Decrement the zero_row to keep the position accurate
 	statePtr->zero_row--;
 }
@@ -153,9 +140,9 @@ void move_up(struct state* statePtr){
 /**
  * Move the 0 slider left by 1 column
  */
-void move_left(struct state* statePtr){
+void move_left(struct state* statePtr, const int N){
 	//Utilize the swap function, move the zero_column left by 1
-	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column-1, statePtr);	
+	swap_tiles(statePtr->zero_row, statePtr->zero_column, statePtr->zero_row, statePtr->zero_column-1, statePtr, N);
 	//Decrement the zero_column to keep the position accurate
 	statePtr->zero_column--;
 }
@@ -170,13 +157,10 @@ int states_same(struct state* a, struct state* b, const int N){
 		return 0;
 	}
 
-	//Go through each row in the dynamic tile matrix in both states
-	for(int i = 0; i < N; i++){
-		//We can use memcmp to efficiently compare the space pointed to by each pointer
-		if(memcmp(a->tiles[i], b->tiles[i], sizeof(short) * N) != 0){
-			//If we find a difference, return 0
-			return 0;
-		}
+	//We can use memcmp to efficiently compare the space pointed to by each pointer
+	if(memcmp(a->tiles, b->tiles, sizeof(short) * N * N) != 0){
+		//If we find a difference, return 0
+		return 0;
 	}
 
 	//Return 1 if same	
@@ -213,7 +197,7 @@ void update_prediction_function(struct state* statePtr, const int N){
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N; j++){
 			//grab the number to be examined
-			selected_num = statePtr->tiles[i][j];
+			selected_num = *(statePtr->tiles + i * N + j);
 
 			//We do not care about 0 as it can move, so skip it
 			if(selected_num == 0){
@@ -254,7 +238,7 @@ void update_prediction_function(struct state* statePtr, const int N){
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N-1; j++){
 			//Grab the leftmost tile that we'll be comparing to
-			left = statePtr->tiles[i][j];
+			left = *(statePtr->tiles + i * N + j);
 
 			//If this tile is 0, it's irrelevant so do not explore further
 			if(left == 0){
@@ -264,7 +248,7 @@ void update_prediction_function(struct state* statePtr, const int N){
 			//Now go through every tile in the row after left, this is what makes this generalized linear conflict
 			for(int k = j+1; k < N; k++){
 				//Grab right tile for convenience
-				right = statePtr->tiles[i][k];
+				right = *(statePtr->tiles + i * N + k);
 
 				//Again, if the tile is 0, no use in wasting cycles with it
 				if(right == 0){
@@ -294,7 +278,7 @@ void update_prediction_function(struct state* statePtr, const int N){
 	for(int i = 0; i < N-1; i++){
 		for(int j = 0; j < N; j++){
 			//Grab the abovemost tile that we'll be comparing to
-			above = statePtr->tiles[i][j];
+			above = *(statePtr->tiles + i * N + j);
 
 			//If this tile is 0, it's irrelevant so do not explore further
 			if(above == 0){
@@ -304,7 +288,7 @@ void update_prediction_function(struct state* statePtr, const int N){
 			//Now go through every tile in the column below "above", this is what makes it generalized linear conflict
 			for(int k = i+1; k < N; k++){
 				//Grab the below tile for convenience
-				below = statePtr->tiles[k][j];
+				below = *(statePtr->tiles + i * N + j);
 
 				//We don't care about the 0 tile, skip if we find it
 				if(below == 0){
@@ -360,7 +344,7 @@ void initialize_start_goal(char** argv, struct state* start_state, struct state*
 		for (int j = 0; j < N; j++){
 			//Grab the specific tile number from the arguments and place it into the start state
 			tile=atoi(argv[index++]);
-			start_state->tiles[i][j] = tile;
+			*(start_state->tiles + N * i + j) = tile;
 
 			//If we found the zero tile, update the zero row and column
 			if(tile == 0){
@@ -388,17 +372,14 @@ void initialize_start_goal(char** argv, struct state* start_state, struct state*
 	//Dynamically allocate the memory needed in the goal_state
 	initialize_state(goal_state, N);	
 
-	int row, col;
 	//To create the goal state, place the numbers 1-15 in the appropriate locations
 	for(short num = 1; num < N * N; num++){
 		//We can mathematically find row and column positions for inorder numbers
-		row = (num - 1) / N;
-		col = (num - 1) % N;
-		goal_state->tiles[row][col] = num;
+		*(goal_state->tiles + num - 1) = num;
 	}
 
 	//0 is always at the last spot in the goal state
-	goal_state->tiles[N-1][N-1] = 0;
+	goal_state->tiles[N * N -1] = 0;
 
 	//Initialize everything else in the goal state
 	goal_state->zero_row = (goal_state)->zero_column = N-1;

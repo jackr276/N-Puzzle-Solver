@@ -42,16 +42,12 @@ int main(int argc, char** argv) {
 	int row, col;
 	//Now generate the goal state. Once we create the goal state, we will "mess it up" according to the input number
 	for(short index = 1; index < N*N; index++){
-		//Mathematically generate row position for goal by integer dividing the number by N
-		row = (index-1) / N;
-		//Mathematically generate column position for goal by finding remainder of row division
-		col = (index-1) % N;
 		//Put the index in the correct position
-		statePtr->tiles[row][col] = index;
+		*(statePtr->tiles + index - 1) = index;
 	}
 	
 	//Now that we have generated and placed numbers 1-15, we will put the 0 slider in the very last slot
-	statePtr->tiles[N-1][N-1] = 0;
+	*(statePtr->tiles + N * N - 1) = 0;
 	//Initialize the zero_row and zero_column position for use later
 	statePtr->zero_row = N-1;
 	statePtr->zero_column = N-1;
@@ -75,22 +71,22 @@ int main(int argc, char** argv) {
 		
 		//Move left if possible and random_move is 0
 		if(random_move == 0 && statePtr->zero_column > 0){
-			move_left(statePtr);
+			move_left(statePtr, N);
 		}
 
 		//Move right if possible and random move is 1
 		if(random_move == 1 && statePtr->zero_column < N-1){
-			move_right(statePtr);
+			move_right(statePtr, N);
 		}
 
 		//Move down if possible and random move is 2
 		if(random_move == 2 && statePtr->zero_row < N-1){
-			move_down(statePtr);
+			move_down(statePtr, N);
 		}
 
 		//Move up if possible and random move is 3
 		if(random_move == 3 && statePtr->zero_row > 0){
-			move_up(statePtr);
+			move_up(statePtr, N);
 		}
 
 		//Increment i
