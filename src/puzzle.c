@@ -158,6 +158,7 @@ int states_same(struct state* a, struct state* b, const int N){
 		return 0;
 	}
 
+	//Go through tile by tile and compare
 	for(int i = 0; i < N * N; i++){
 		if(a->tiles[i] != b->tiles[i]){
 			return 0;
